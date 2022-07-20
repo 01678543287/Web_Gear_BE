@@ -14,6 +14,11 @@ module.exports.messages = {
     2003: 'Delete category failed',
     2004: 'There are products in this category',
 
+    3000: 'Login failed',
+    3001: 'Email not exist',
+    3003: 'Account is lock',
+    3004: 'User id not exists',
+
 
     9999: 'Error'
 };

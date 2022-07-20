@@ -46,4 +46,24 @@ router.delete('/delete',authenticateAdminToken, (req, res) => {
     })
 })
 
+router.get('/getUserByID/:user_id', (req, res) => {
+    let params = req.params;
+    UserService.getUserByID(params, (err, result) => {
+        result = result || {};
+        let { errorCode, message, data, statusCode } = result;
+        if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
+        return Response.Success(req, res, 'success', result)
+    })
+})
+
+router.get('/getUsers', (req, res) => {
+    let params = req.query;
+    UserService.getUsers(params, (err, result) => {
+        result = result || {};
+        let { errorCode, message, data, statusCode } = result;
+        if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
+        return Response.Success(req, res, 'success', result)
+    })
+})
+
 module.exports = router

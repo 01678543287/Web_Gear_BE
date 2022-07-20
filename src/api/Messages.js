@@ -18,6 +18,7 @@ module.exports.messages = {
     3001: 'Email not exist',
     3003: 'Account is lock',
     3004: 'User id not exists',
+    3005: 'Password invalid',
 
 
     9999: 'Error'

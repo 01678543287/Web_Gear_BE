@@ -1,18 +1,21 @@
 const { DateTime } = require("luxon");
 const { eachLimit } = require("async");
-const async = require("async")
-const bcrypt = require("bcrypt")
+const async = require("async");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-const db = require('../../config/connectDB')
-const User = require('../../models/Users')
+const db = require('../../config/connectDB');
+const User = require('../../models/Users');
+const Card = require('../../models/Card')
 
-const Untils = require('../modules/Untils')
-const _error = Untils._error
+const Untils = require('../modules/Untils');
+const _error = Untils._error;
+const _success = Untils._success;
 const MESSAGESCONFIG = require('../Messages');
 const { sequelize } = require("../../config/connectDB");
-const MESSAGES = MESSAGESCONFIG.messages
+const MESSAGES = MESSAGESCONFIG.messages;
 
-let Service = {}
+let Service = {};
 
 Service.createUser = async (params, callback) => {
     let { name, age, email, phone, address, password } = params;
@@ -23,7 +26,7 @@ Service.createUser = async (params, callback) => {
 
     let dataUser = {
         name: name,
-        age: age,
+        age: age ? age : 0,
         email: email,
         address: address,
         password: password,
@@ -32,12 +35,163 @@ Service.createUser = async (params, callback) => {
         new: 0
     }
     let result, err;
-    [err, result] = await Untils.to(User.create( dataUser, {raw: true }))
+    [err, result] = await Untils.to(User.create(dataUser, { raw: true }))
 
     if (err) {
-        result = _error(400,err,err.errors[0].message);
-        return callback(400, {data: result})
+        result = _error(400, err, err.errors[0].message);
+        return callback(400, { data: result })
     }
+
+    console.log(result)
+
+    const dataToken = {
+        id: result.id,
+        name: result.name,
+        age: result.age,
+        email: result.email,
+        address: result.address,
+        phone: result.phone,
+        role: result.role,
+        new: result.new
+    }
+
+    const accessToken = jwt.sign(dataToken, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10d' })
+
+
+    result = _success(200)
+    result.access_token = accessToken;
+    return callback(null, result)
+}
+
+Service.signIn = async (params, callback) => {
+    let { email, password } = params;
+    if (!email || !password) {
+        let result = _error(1000)
+        return callback(1000, { data: result })
+    }
+
+    let checkUser = {
+        where: {
+            email: email
+        }
+    }
+
+    let err, user;
+    [err, user] = await Untils.to(User.findOne(checkUser, { raw: true }))
+    if (err) {
+        let result = _error(3000, err)
+        return callback(3000, { data: result })
+    }
+    if (!user) {
+        let result = _error(3001)
+        return callback(3001, { data: result })
+    }
+    if (user.status == 1) {
+        let result = _error(3003)
+        return callback(3003, { data: result })
+    }
+    if (user.status == 2) {
+        let result = _error(3001)
+        return callback(3001, { data: result })
+    }
+    const validPass = await bcrypt.compareSync(password, user.password)
+
+    if (validPass) {
+        const dataToken = {
+            id: user.id,
+            name: user.name,
+            age: user.age,
+            email: user.email,
+            address: user.address,
+            phone: user.phone,
+            role: user.role,
+            new: user.new
+        }
+        const accessToken = jwt.sign(dataToken, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10d' })
+        result = _success(200)
+        result.access_token = accessToken;
+        return callback(null, result)
+    }
+}
+
+Service.lock = async (params, callback) => {
+    if (!params) {
+        let result = _error(1000, err)
+        return callback(1000, { data: result })
+    }
+    if (!params.user_id) {
+        let result = _error(1000, err)
+        return callback(1000, { data: result })
+    }
+
+    let err, checkExist;
+    [err, checkExist] = await Untils.to(User.findOne({ where: { id: params.user_id, role: 0 } }));
+    if (err) {
+        let result = _error(3004, err)
+        return callback(3004, { data: result })
+    }
+    if (!checkExist) {
+        let result = _error(3004, err)
+        return callback(3004, { data: result })
+    }
+
+    let dataUpdate = {
+        status: 1
+    }
+
+    let errLock, rsLock;
+    [errLock, rsLock] = await Untils.to(User.update(dataUpdate, { where: { id: params.user_id } }));
+
+    let result = _success(200);
+    return callback(null, result);
+}
+
+Service.delete = async (params, callback) => {
+    if (!params) {
+        let result = _error(1000, err)
+        return callback(1000, { data: result })
+    }
+    if (!params.user_id) {
+        let result = _error(1000, err)
+        return callback(1000, { data: result })
+    }
+
+    let err, checkExist;
+    [err, checkExist] = await Untils.to(User.findOne({ where: { id: params.user_id, role: 0 } }));
+    if (err) {
+        let result = _error(3004, err)
+        return callback(3004, { data: result })
+    }
+    if (!checkExist) {
+        let result = _error(3004, err)
+        return callback(3004, { data: result })
+    }
+
+    let dataUpdate = {
+        status: 2
+    }
+
+    let errLock, rsLock;
+    [errLock, rsLock] = await Untils.to(User.update(dataUpdate, { where: { id: params.user_id } }));
+
+    // //unactive card
+    // let whereCard = {
+    //     where: {
+    //         user_id: params.user_id,
+    //         status: 0
+    //     }
+    // }
+    // let dataCard = {
+    //     status: 1
+    // }
+    // let errCard, rsCard;
+    // [errCard, rsCard] = await Untils.to(Card.update(dataCard, whereCard));
+    // if(errCard) {
+    //     console.log('update card error');
+    // }
+
+    let result = _success(200);
+    return callback(null, result);
 }
 
 module.exports = Service

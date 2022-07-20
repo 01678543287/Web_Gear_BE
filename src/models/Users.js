@@ -41,6 +41,9 @@ const Users = db.sequelize.define('users', {
     },
     new: {
         type: Sequelize.INTEGER,
+    },
+    status: {
+        type: Sequelize.INTEGER,
     }
 }, {
     hooks: {

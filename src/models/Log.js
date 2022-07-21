@@ -16,6 +16,9 @@ const Log = db.sequelize.define('log', {
     },
     action: {
         type: Sequelize.CHAR(200),
+    },
+    updatedAt: {
+        type: Sequelize.DATE,
     }
 },
 {

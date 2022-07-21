@@ -3,7 +3,7 @@ const app = express()
 const dotenv = require('dotenv')
 const bodyParser = require('body-parser')
 const port = process.env.PORT || 3000
-const {connectDB} = require('./src/config/connectDB')
+const { connectDB } = require('./src/config/connectDB')
 
 dotenv.config();
 
@@ -40,7 +40,14 @@ connectDB();
 app.use(`${urlApi}/category`, require('./src/api/routers/CategoryRoute'))
 //User
 app.use(`${urlApi}/user`, require('./src/api/routers/UserRoute'))
-
+//Promo
+app.use(`${urlApi}/promo`, require('./src/api/routers/PromoeRoute'))
+//Voucher
+app.use(`${urlApi}/voucher`, require('./src/api/routers/VoucherRoute'))
+//History
+app.use(`${urlApi}/history`, require('./src/api/routers/HistoryRoute'))
+//Warehouse
+app.use(`${urlApi}/warehouse`, require('./src/api/routers/WarehouseRoute'))
 
 app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)

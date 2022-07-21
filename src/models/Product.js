@@ -13,29 +13,35 @@ const Product = db.sequelize.define('products', {
     },
     price: {
         type: Sequelize.DECIMAL(15, 2),
-    }
+    },
     discount: {
         type: Sequelize.DECIMAL(15, 2),
     },
     content: {
         type: Sequelize.TEXT,
-    }
+    },
     image_link: {
         type: Sequelize.STRING,
     },
     image_list: {
         type: Sequelize.TEXT,
         comment: 'json',
-    }
+    },
     view: {
         type: Sequelize.INTEGER,
     },
     sold: {
         type: Sequelize.INTEGER,
-    }
+    },
+    qty: {
+        type: Sequelize.INTEGER,
+    },
+    status: {
+        type: Sequelize.INTEGER,
+    },
     warehouse_id: {
         type: Sequelize.CHAR(36),
-    },
+    }
 },
 {
     tableName: 'products'

@@ -87,7 +87,7 @@ Service.signIn = async (params, callback) => {
         let result = _error(3001)
         return callback(3001, { data: result })
     }
-    console.log(user)
+    
     if (user.status == 1) {
         let result = _error(3003)
         return callback(3003, { data: result })

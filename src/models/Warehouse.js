@@ -8,16 +8,13 @@ const Warehouse = db.sequelize.define('warehouse', {
         defaultValue: DataTypes.UUIDV4,
         allowNull: false
     },
-    qty: {
-        type: Sequelize.INTEGER,
-    },
     status: {
         type: Sequelize.INTEGER,
     }
 },
-{
-    tableName: 'warehouse'
-}
+    {
+        tableName: 'warehouse'
+    }
 )
 
 module.exports = Warehouse;

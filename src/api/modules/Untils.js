@@ -9,6 +9,16 @@ function to(promise) {
     .catch(err => [err]);
 }
 
+let safeParse = (str) => {
+  try {
+    if (typeof str == 'object') return str;
+    return JSON.parse(str);
+  } catch (ex) {
+    // console.log('safeParse ex=', ex);
+    return null;
+  }
+}
+
 let _error = (errorCode, err, messageERR = "") => {
   return {
     errorCode: errorCode,
@@ -28,5 +38,6 @@ let _success = (succesCode) => {
 module.exports = {
   to,
   _error,
-  _success
+  _success,
+  safeParse
 }

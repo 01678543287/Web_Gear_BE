@@ -16,6 +16,9 @@ const Rate = db.sequelize.define('rate', {
     },
     point: {
         type: Sequelize.INTEGER,
+    },
+    updatedAt: {
+        type: Sequelize.DATE,
     }
 },
 {

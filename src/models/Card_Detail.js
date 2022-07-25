@@ -19,6 +19,9 @@ const Card_Detail = db.sequelize.define('card_detail', {
     },
     rate: {
         type: Sequelize.INTEGER,
+    },
+    updatedAt: {
+        type: Sequelize.DATE,
     }
 },
 {

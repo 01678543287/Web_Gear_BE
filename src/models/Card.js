@@ -22,6 +22,9 @@ const Card = db.sequelize.define('card', {
     },
     note: {
         type: Sequelize.TEXT,
+    },
+    updatedAt: {
+        type: Sequelize.DATE,
     }
 },
 {

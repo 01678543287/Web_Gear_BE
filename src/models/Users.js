@@ -44,6 +44,9 @@ const Users = db.sequelize.define('users', {
     },
     status: {
         type: Sequelize.INTEGER,
+    },
+    updatedAt: {
+        type: Sequelize.DATE,
     }
 }, {
     hooks: {

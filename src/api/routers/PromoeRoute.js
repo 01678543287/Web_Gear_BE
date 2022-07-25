@@ -1,14 +1,14 @@
 const express = require('express')
 const { authenticateAdminToken } = require('../auth/authAdmin')
 const { authenticateToken } = require('../auth/authUser')
-const UserService = require('../modules/UserService')
+const ServicePromo = require('../modules/PromoeService')
 const Response = require('../Response')
 const router = express.Router()
 
 
-router.post('/signUp', (req, res) => {
+router.get('/getAll', authenticateAdminToken, (req, res) => {
     let params = req.body;
-    UserService.createUser(params, (err, result) => {
+    ServicePromo.getAllPromo(params, (err, result) => {
         result = result || {};
         let { errorCode, message, data, statusCode } = result;
         if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
@@ -16,9 +16,9 @@ router.post('/signUp', (req, res) => {
     })
 })
 
-router.get('/signIn', (req, res) => {
+router.post('/create', authenticateAdminToken, (req, res) => {
     let params = req.body;
-    UserService.signIn(params, (err, result) => {
+    ServicePromo.createPromo(params, (err, result) => {
         result = result || {};
         let { errorCode, message, data, statusCode } = result;
         if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
@@ -26,29 +26,9 @@ router.get('/signIn', (req, res) => {
     })
 })
 
-router.put('/lock',authenticateAdminToken, (req, res) => {
-    let params = req.body;
-    UserService.lock(params, (err, result) => {
-        result = result || {};
-        let { errorCode, message, data, statusCode } = result;
-        if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
-        return Response.Success(req, res, 'success', result)
-    })
-})
-
-router.delete('/delete',authenticateAdminToken, (req, res) => {
-    let params = req.body;
-    UserService.lock(params, (err, result) => {
-        result = result || {};
-        let { errorCode, message, data, statusCode } = result;
-        if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
-        return Response.Success(req, res, 'success', result)
-    })
-})
-
-router.get('/getUserByID/:user_id', (req, res) => {
+router.get('/getPromo/:promo_id', (req, res) => {
     let params = req.params;
-    UserService.getUserByID(params, (err, result) => {
+    ServicePromo.getPromoByID(params, (err, result) => {
         result = result || {};
         let { errorCode, message, data, statusCode } = result;
         if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
@@ -56,9 +36,9 @@ router.get('/getUserByID/:user_id', (req, res) => {
     })
 })
 
-router.get('/getUsers', (req, res) => {
-    let params = req.query;
-    UserService.getUsers(params, (err, result) => {
+router.put('/edit', authenticateAdminToken, (req, res) => {
+    let params = req.body;
+    ServicePromo.editPromo(params, (err, result) => {
         result = result || {};
         let { errorCode, message, data, statusCode } = result;
         if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
@@ -66,4 +46,16 @@ router.get('/getUsers', (req, res) => {
     })
 })
 
-module.exports = router
+router.delete('/delete', authenticateAdminToken, (req, res) => {
+    let params = req.body;
+    ServicePromo.deletePromo(params, (err, result) => {
+        result = result || {};
+        let { errorCode, message, data, statusCode } = result;
+        if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
+        return Response.Success(req, res, 'success', result)
+    })
+})
+
+
+
+module.exports = router;

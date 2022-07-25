@@ -31,9 +31,6 @@ const Order = db.sequelize.define('order', {
     },
     status: {
         type: Sequelize.INTEGER,
-    },
-    updatedAt: {
-        type: Sequelize.DATE,
     }
 },
 {

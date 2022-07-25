@@ -16,9 +16,6 @@ const Payment = db.sequelize.define('payment', {
     },
     amount: {
         type: Sequelize.DECIMAL(15, 2),
-    },
-    updatedAt: {
-        type: Sequelize.DATE,
     }
 }, {
     tableName: 'payment'

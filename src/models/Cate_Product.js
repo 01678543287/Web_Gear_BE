@@ -13,9 +13,6 @@ const Cate_Product = db.sequelize.define('cate_product', {
     },
     product_id: {
         type: Sequelize.CHAR(36),
-    },
-    updatedAt: {
-        type: Sequelize.DATE,
     }
 },
 {

@@ -13,9 +13,6 @@ const Category = db.sequelize.define('category', {
     },
     parent_id: {
         type: Sequelize.CHAR(36),
-    },
-    updatedAt: {
-        type: Sequelize.DATE,
     }
 },
 {

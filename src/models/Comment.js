@@ -19,9 +19,6 @@ const Comment = db.sequelize.define('comment', {
     },
     content: {
         type: Sequelize.TEXT,
-    },
-    updatedAt: {
-        type: Sequelize.DATE,
     }
 },
 {

@@ -6,7 +6,7 @@ const Response = require('../Response')
 const router = express.Router()
 
 
-router.get('/getAll', authenticateToken, (req, res) => {
+router.get('/getAll', (req, res) => {
   let params = req.body;
   ServiceCategory.getAllCategory(params, (err, result) => {
     result = result || {};

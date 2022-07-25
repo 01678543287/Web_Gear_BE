@@ -37,21 +37,21 @@ Service.getAllHistoryByUser = async (params, callback) => {
         let result = _error(500, errHistory)
         return callback(500, { data: result })
     }
-
+    //chưa code phần dưới
     console.log(rsHistory,'==')
     return;
 
-    eachLimit(result, 1, async (item) => {
-        let errr, resultt;
-        [errr, resultt] = await Untils.to(Category.findAll({ where: { parent_id: item.id }, raw: true }));
-        item.cate_child = resultt ? resultt : [{}];
-    }, (errr, resulttt) => {
-        if (errr) {
-            result = _error(404, errr)
-            return callback(404, { data: result })
-        }
-        return callback(null, result)
-    })
+    // eachLimit(result, 1, async (item) => {
+    //     let errr, resultt;
+    //     [errr, resultt] = await Untils.to(Category.findAll({ where: { parent_id: item.id }, raw: true }));
+    //     item.cate_child = resultt ? resultt : [{}];
+    // }, (errr, resulttt) => {
+    //     if (errr) {
+    //         result = _error(404, errr)
+    //         return callback(404, { data: result })
+    //     }
+    //     return callback(null, result)
+    // })
 }
 
 Service.createCategory = async (params, callback) => {

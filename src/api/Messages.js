@@ -31,6 +31,11 @@ module.exports.messages = {
     6002: 'Lock warehouse failed',
     6003: 'There are products in this warehouse',
 
+    7000: 'Product not found',
+
+    8000: 'Cate-Product failed',
+
+
 
     9999: 'Error'
 };

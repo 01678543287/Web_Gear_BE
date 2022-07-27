@@ -36,6 +36,6 @@ module.exports.messages = {
     8000: 'Cate-Product failed',
 
 
-
+    9998: 'Upload files failed',
     9999: 'Error'
 };

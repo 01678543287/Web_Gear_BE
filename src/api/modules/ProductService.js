@@ -1,5 +1,10 @@
 const { DateTime } = require("luxon");
 const { eachLimit } = require("async");
+const {
+  uploadFileImage,
+  multer,
+  bucket,
+} = require("../upload/UploadFileCloud");
 
 const db = require("../../config/connectDB");
 const Product = require("../../models/Product");
@@ -56,7 +61,6 @@ Service.createProduct = async (params, callback) => {
     result = _error(1000, err);
     return callback(1000, { data: result });
   }
-
   let {
     name,
     price,
@@ -67,6 +71,8 @@ Service.createProduct = async (params, callback) => {
     qty,
     cate_id,
   } = params;
+
+  console.log(params);
 
   if (
     !name ||
@@ -80,14 +86,12 @@ Service.createProduct = async (params, callback) => {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
-
   let whereCate = {
     where: {
       id: cate_id,
     },
     raw: true,
   };
-
   let errCate, rsCate;
   [errCate, rsCate] = await Untils.to(Category.findOne(whereCate));
   if (errCate) {
@@ -99,6 +103,21 @@ Service.createProduct = async (params, callback) => {
     return callback(2000, result);
   }
 
+  let errUpload, rsUpload;
+  [errUpload, rsUpload] = await Untils.to(uploadFileImage(image_link));
+  if (errUpload) {
+    let result = _error(9998, errUpload);
+    return callback(9998, { data: result });
+  }
+  const imageDemo = rsUpload;
+  let listImage = [];
+
+  for (image of image_list) {
+    let err, rs;
+    [err, rs] = await Untils.to(uploadFileImage(image));
+    listImage.push({ image_link: rs });
+  }
+
   let dataProduct = {
     name: name,
     price: price,
@@ -107,8 +126,8 @@ Service.createProduct = async (params, callback) => {
     sold: 0,
     status: 0,
     discount: 0,
-    image_link: image_link,
-    image_list: JSON.stringify(image_list),
+    image_link: imageDemo,
+    image_list: JSON.stringify(listImage),
     warehouse_id: warehouse_id,
     qty: qty,
   };
@@ -121,7 +140,6 @@ Service.createProduct = async (params, callback) => {
     let result = _error(4000, errProduct);
     return callback(4000, { data: result });
   }
-
   let errCatePro, rsCatePro;
   [errCatePro, rsCatePro] = await Untils.to(
     Cate_Product.create({ catelog_id: cate_id, product_id: rsProduct.id })
@@ -130,7 +148,6 @@ Service.createProduct = async (params, callback) => {
     let result = _error(8000, errCatePro);
     return callback(8000, result);
   }
-
   let result = _success(200);
   return callback(null, result);
 };

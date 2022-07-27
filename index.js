@@ -39,6 +39,50 @@ connectDB();
 //   return res.send('Hello World 123')
 // })
 
+//Upload File
+// const { Storage } = require("@google-cloud/storage");
+// const Multer = require("multer");
+
+// const multer = Multer({
+//   storage: Multer.memoryStorage(),
+//   limits: {
+//     fileSize: 2 * 1024 * 1024, // 2MB
+//   },
+// });
+
+// const storage = new Storage({
+//   projectId: process.env.PROJECT_ID,
+//   keyFile: "myKey",
+// });
+// const bucket = storage.bucket("cloudimage123");
+// const fileStorageEngine = Multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, "./images");
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, Date.now() + "-" + file.originalname);
+//   },
+// });
+// const upload = Multer({
+//   storage: fileStorageEngine,single("imagefile")
+// });
+// const { multer, bucket } = require("./src/api/upload/UploadFileCloud");
+// app.post("/upload", multer.single("imagefile"), (req, res) => {
+//   try {
+//     if (req.file) {
+//       const blob = bucket.file(Date.now() + ":" + req.file.originalname);
+//       const blobStream = blob.createWriteStream();
+
+//       blobStream.on("finish", () => {
+//         res.status(200).send("success");
+//       });
+//       blobStream.end(req.file.buffer);
+//     }
+//   } catch (error) {
+//     res.status(500).send("server error");
+//   }
+// });
+
 //Category
 app.use(`${urlApi}/category`, require("./src/api/routers/CategoryRoute"));
 //User

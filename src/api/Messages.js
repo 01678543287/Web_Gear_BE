@@ -32,6 +32,8 @@ module.exports.messages = {
     6003: 'There are products in this warehouse',
 
     7000: 'Product not found',
+    7001: 'Product update failed',
+    7002: 'Cate_product update failed',
 
     8000: 'Cate-Product failed',
 

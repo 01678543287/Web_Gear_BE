@@ -12,7 +12,7 @@ const multer = Multer({
 
 const storage = new Storage({
   projectId: process.env.PROJECT_ID,
-  keyFileName: "myKey"
+  keyFileName: "myKey",
 });
 const bucket = storage.bucket("cloudimage123");
 
@@ -38,16 +38,16 @@ const bucket = storage.bucket("cloudimage123");
 //   }
 // };
 
-let uploadFileImage = async (file) => {
+let uploadFileImage = async (file, idImage) => {
   try {
     if (file) {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const uniqueSuffix = idImage + "-" + Date.now() + "-" + Math.round(Math.random() * 1e9);
       const blob = bucket.file(uniqueSuffix + file.originalname);
       const blobStream = blob.createWriteStream();
 
       blobStream.on("finish", () => {});
       blobStream.end(file.buffer);
-      return linkImage + uniqueSuffix + file.originalname;
+      return uniqueSuffix + file.originalname;
     }
   } catch (error) {
     console.log(error, "error");

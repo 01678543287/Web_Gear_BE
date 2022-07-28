@@ -50,9 +50,12 @@ router.post("/createProduct", cpUpload, (req, res) => {
   });
 });
 
-router.put("/edit", authenticateAdminToken, (req, res) => {
+router.put("/editProduct/:id", cpUpload, (req, res) => {
   let params = req.body;
-  ServiceProduct.editCategory(params, (err, result) => {
+  params.image_link = req.files["image_link"][0];
+  params.image_list = req.files["image_list"];
+  params.id = req.params.id ? req.params.id : "";
+  ServiceProduct.editProduct(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -69,9 +72,29 @@ router.put("/edit", authenticateAdminToken, (req, res) => {
   });
 });
 
-router.delete("/delete", authenticateAdminToken, (req, res) => {
+router.post("/deleteProduct/:id", (req, res) => {
   let params = req.body;
-  ServiceProduct.deleteCategory(params, (err, result) => {
+  params.id = req.params.id;
+  ServiceProduct.deleteProduct(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.get("/getAProductDetail/:id", (req, res) => {
+  let params = req.body;
+  ServiceProduct.getAProductDetail(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)

@@ -68,11 +68,11 @@ Service.createProduct = async (params, callback) => {
     image_link,
     image_list,
     warehouse_id,
+    discount,
+    status,
     qty,
     cate_id,
   } = params;
-
-  console.log(params);
 
   if (
     !name ||
@@ -103,8 +103,10 @@ Service.createProduct = async (params, callback) => {
     return callback(2000, result);
   }
 
+  const idImage = Untils.generateId(8);
+
   let errUpload, rsUpload;
-  [errUpload, rsUpload] = await Untils.to(uploadFileImage(image_link));
+  [errUpload, rsUpload] = await Untils.to(uploadFileImage(image_link, idImage));
   if (errUpload) {
     let result = _error(9998, errUpload);
     return callback(9998, { data: result });
@@ -114,18 +116,21 @@ Service.createProduct = async (params, callback) => {
 
   for (image of image_list) {
     let err, rs;
-    [err, rs] = await Untils.to(uploadFileImage(image));
+    [err, rs] = await Untils.to(uploadFileImage(image, idImage));
+    if (err) {
+      console.log(err, "upload file failed!!!");
+    }
     listImage.push({ image_link: rs });
   }
 
   let dataProduct = {
     name: name,
     price: price,
-    content: content,
+    content: content ? content : "",
     view: 0,
     sold: 0,
-    status: 0,
-    discount: 0,
+    status: status ? status : 0,
+    discount: discount ? discount : 0,
     image_link: imageDemo,
     image_list: JSON.stringify(listImage),
     warehouse_id: warehouse_id,
@@ -152,55 +157,175 @@ Service.createProduct = async (params, callback) => {
   return callback(null, result);
 };
 
-Service.getPromoByID = async (params, callback) => {
+Service.editProduct = async (params, callback) => {
+  // console.log(params, "ok");
+  // let files = await bucket.getFiles()
+  // files = files[0].filter(f => f.id.includes(dirName + '/'));
+  // console.log(files, "listimage");
+  // return;
+
   if (!params) {
     let result = _error(1000, err);
     return callback(1000, { data: result });
   }
 
-  let { promo_id } = params;
-  if (!promo_id) {
-    let result = _error(1000, err);
-    return callback(1000, { data: result });
-  }
-  let where = {
-    where: {
-      id: promo_id,
-    },
-    raw: true,
-  };
-  let errPromo, rsPromo;
-  [errPromo, rsPromo] = await Untils.to(Promo.findOne(where));
-  if (errPromo) {
-    let result = _error(2002, errPromo);
-    return callback(2002, { data: result });
-  }
+  const {
+    id,
+    name,
+    price,
+    status,
+    discount,
+    content,
+    image_link,
+    image_list,
+    qty,
+    cate_id,
+  } = params;
 
-  let result = _success(200);
-  result.promo = rsPromo;
-  return callback(null, result);
-};
-
-Service.editPromo = async (params, callback) => {
-  if (!params) {
-    result = _error(1000, err);
-    return callback(1000, { data: result });
-  }
-
-  let { id, title, code, status, type, value_type } = params;
-
-  if (!id) {
+  if (
+    !id ||
+    !name ||
+    !price ||
+    !image_link ||
+    !image_list ||
+    !qty ||
+    !cate_id
+  ) {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
 
-  let dataPromo = {
-    title: title,
-    code: code,
-    status: status,
-    type: type,
-    value_type: value_type,
+  let findProduct = {
+    where: {
+      id: id,
+    },
+    raw: true,
   };
+  let errProduct, rsProduct;
+  [errProduct, rsProduct] = await Untils.to(Product.findOne(findProduct));
+  if (errProduct) {
+    let result = _error(7000, errProduct);
+    return callback(7000, { data: result });
+  }
+  if (!rsProduct) {
+    let result = _error(7000);
+    return callback(7000, { data: result });
+  }
+
+  // delete file old
+
+  // const imageLink = rsProduct.image_link;
+  // const imageList = Untils.safeParse(rsProduct.image_list);
+  // console.log(imageLink, "imglink");
+  // let errDelImg;
+  // errDelImg = await bucket.file(rsProduct.image_link).delete();
+  // if (errDelImg) {
+  //   console.log("delete file: ", rsProduct.image_link);
+  // }
+  // for (image of imageList) {
+  //   await bucket.file(image.image_link).delete();
+  // }
+  // console.log("done delete files ...");
+
+  //upload new file
+  // const idImage = Untils.generateId(8);
+
+  // let errUpload, rsUpload;
+  // [errUpload, rsUpload] = await Untils.to(uploadFileImage(image_link, idImage));
+  // if (errUpload) {
+  //   let result = _error(9998, errUpload);
+  //   return callback(9998, { data: result });
+  // }
+  // const imageDemo = rsUpload;
+  // let listImage = [];
+
+  // for (image of image_list) {
+  //   let err, rs;
+  //   [err, rs] = await Untils.to(uploadFileImage(image, idImage));
+  //   if (err) {
+  //     console.log(err, "upload file failed!!!");
+  //   }
+  //   listImage.push({ image_link: rs });
+  // }
+
+  let dataUpateProduct = {
+    name: name,
+    price: price,
+    content: content ? content : "",
+    view: 0,
+    sold: 0,
+    status: status ? status : 0,
+    discount: discount ? discount : 0,
+    // image_link: imageDemo,
+    // image_list: JSON.stringify(listImage),
+    qty: qty,
+  };
+
+  let errP, rsP;
+  [errP, rsP] = await Untils.to(
+    Product.update(dataUpateProduct, { where: { id: id } })
+  );
+  if (errP) {
+    let result = _error(7001, errP);
+    return callback(7001, { data: result });
+  }
+
+  let findCate = {
+    where: {
+      id: cate_id,
+    },
+    raw: true,
+  };
+
+  let errCate, rsCate;
+  [errCate, rsCate] = await Untils.to(Category.findOne(findCate));
+  if (errCate) {
+    let result = _error(2000, errCate);
+    return callback(2000, { data: result });
+  }
+  if (!rsCate) {
+    let result = _error(2000, errCate);
+    return callback(2000, { data: result });
+  }
+
+  let where = {
+    where: {
+      product_id: id,
+    },
+  };
+  let dataCatePro = {
+    catelog_id: cate_id,
+    product_id: id,
+  };
+
+  console.log(where, "where");
+  console.log(dataCatePro, "dataCatePro");
+
+  let errCatePro, rsCatePro;
+  [errCatePro, rsCatePro] = await Untils.to(
+    Cate_Product.update(dataCatePro, where)
+  );
+  if (errCatePro) {
+    let result = _error(7002, errCatePro);
+    return callback(7002, { data: result });
+  }
+
+  let result = _success(200);
+  return callback(null, { data: result });
+};
+
+Service.deleteProduct = async (params, callback) => {
+  if (!params) {
+    result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let { id } = params;
+
+  if (!id) {
+    result = _error(1000);
+    return callback(1000, { data: result });
+  }
 
   let where = {
     where: {
@@ -209,40 +334,45 @@ Service.editPromo = async (params, callback) => {
     raw: true,
   };
 
-  let errPromo, resultPromo;
-  [errPromo, resultPromo] = await Untils.to(Promo.update(dataPromo, where));
-  if (errPromo) {
-    let result = _error(2002, errPromo);
-    return callback(2002, { data: result });
+  let dataProduct = {
+    status: 1,
+  };
+
+  let errProduct, rsProduct;
+  [errProduct, rsProduct] = await Untils.to(Product.update(dataProduct, where));
+  if (errProduct) {
+    let result = _error(500, errProduct);
+    return callback(500, { data: result });
   }
 
   let result = _success(200);
   return callback(null, result);
 };
 
-Service.deletePromo = async (params, callback) => {
+Service.getAProductDetail = async (params, callback) => {
   if (!params) {
-    result = _error(1000, err);
+    result = _error(1000);
     return callback(1000, { data: result });
   }
 
-  let { promo_id } = params;
-  if (!promo_id) {
-    result = _error(1000, err);
+  let { id } = params;
+
+  if (!id) {
+    result = _error(1000);
     return callback(1000, { data: result });
   }
 
   let where = {
     where: {
-      id: promo_id,
+      id: id,
     },
     raw: true,
   };
 
-  let errPromo, rsPromo;
-  [errPromo, rsPromo] = await Untils.to(Promo.destroy(where));
-  if (errPromo) {
-    let result = _error(500, errPromo);
+  let errProduct, rsProduct;
+  [errProduct, rsProduct] = await Untils.to(Product.update(dataProduct, where));
+  if (errProduct) {
+    let result = _error(500, errProduct);
     return callback(500, { data: result });
   }
 

@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const Untils = require("../modules/Untils");
-const User = require("../../models/Users");
+const Admin = require("../../models/Admin");
 
 let authenticateAdminToken = (req, res, next) => {
   const authHeader = req.headers["authorization"]
@@ -20,7 +20,7 @@ let authenticateAdminToken = (req, res, next) => {
     if (err) return res.sendStatus(403);
     let errAdmin, checkAdmin;
     [errAdmin, checkAdmin] = await Untils.to(
-      User.findOne({ where: { id: user.id, role: 1 } })
+      Admin.findOne({ where: { id: user.id } })
     );
     if (!checkAdmin) {
       return res.sendStatus(401);

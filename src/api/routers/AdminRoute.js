@@ -1,16 +1,15 @@
 const express = require("express");
 const { authenticateAdminToken } = require("../auth/authAdmin");
-const { authenticateToken } = require("../auth/authUser");
-const UserService = require("../modules/UserService");
+const AdminService = require("../modules/AdminService");
 const Response = require("../Response");
 const router = express.Router();
 const { multer } = require("../upload/UploadFileCloud");
 
 const cpUpload = multer.fields([{ name: "avatar", maxCount: 1 }]);
-router.post("/signUp", cpUpload, (req, res) => {
+router.post("/signUpAdmin", cpUpload, authenticateAdminToken, (req, res) => {
   let params = req.body;
-  params.avatar = req.files["avatar"][0];
-  UserService.createUser(params, (err, result) => {
+  params.avatar = req.files["avatar"] ? req.files["avatar"][0] : "";
+  AdminService.createAdmin(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -27,9 +26,9 @@ router.post("/signUp", cpUpload, (req, res) => {
   });
 });
 
-router.get("/signIn", (req, res) => {
+router.get("/signInAdmin", (req, res) => {
   let params = req.body;
-  UserService.signIn(params, (err, result) => {
+  AdminService.signIn(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -48,7 +47,7 @@ router.get("/signIn", (req, res) => {
 
 router.put("/lock", authenticateAdminToken, (req, res) => {
   let params = req.body;
-  UserService.lock(params, (err, result) => {
+  AdminService.lock(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -67,7 +66,7 @@ router.put("/lock", authenticateAdminToken, (req, res) => {
 
 router.delete("/delete", authenticateAdminToken, (req, res) => {
   let params = req.body;
-  UserService.lock(params, (err, result) => {
+  AdminService.lock(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -86,7 +85,7 @@ router.delete("/delete", authenticateAdminToken, (req, res) => {
 
 router.get("/getUserByID/:user_id", (req, res) => {
   let params = req.params;
-  UserService.getUserByID(params, (err, result) => {
+  AdminService.getUserByID(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -105,7 +104,7 @@ router.get("/getUserByID/:user_id", (req, res) => {
 
 router.get("/getUsers", (req, res) => {
   let params = req.query;
-  UserService.getUsers(params, (err, result) => {
+  AdminService.getUsers(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)

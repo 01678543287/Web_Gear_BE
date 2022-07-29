@@ -41,10 +41,13 @@ let generateId = (length) => {
   );
 };
 
+const linkImage = "https://storage.googleapis.com/cloudimage123/";
+
 module.exports = {
   to,
   _error,
   _success,
   safeParse,
   generateId,
+  linkImage,
 };

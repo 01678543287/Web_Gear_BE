@@ -10,22 +10,33 @@ const {
 } = require("../upload/UploadFileCloud");
 
 const db = require("../../config/connectDB");
-const User = require("../../models/Users");
-const Card = require("../../models/Card");
+const Admin = require("../../models/Admin");
 
 const Untils = require("../modules/Untils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
 const { sequelize } = require("../../config/connectDB");
+const { now } = require("moment");
 const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
 
-Service.createUser = async (params, callback) => {
-  let { name, age, email, phone, address, password, avatar, gender } = params;
+Service.createAdmin = async (params, callback) => {
+  let {
+    name,
+    email,
+    phone,
+    address,
+    password,
+    avatar,
+    gender,
+    birthday,
+    cccd,
+    home_town,
+  } = params;
   if (!email || !password) {
-    result = _error(1000, err);
+    let result = _error(1000);
     return callback(1000, { data: result });
   }
 
@@ -42,21 +53,22 @@ Service.createUser = async (params, callback) => {
 
   let dataUser = {
     name: name,
-    age: age ? age : 0,
+    birthday: birthday ? birthday : 0,
     gender: gender ? gender : 0,
     avatar: avatarImg,
     email: email,
     address: address,
     password: password,
     phone: phone,
-    role: 0,
-    new: 0,
+    cccd: cccd,
+    home_town: home_town,
   };
+
   let result, err;
-  [err, result] = await Untils.to(User.create(dataUser, { raw: true }));
+  [err, result] = await Untils.to(Admin.create(dataUser, { raw: true }));
 
   if (err) {
-    result = _error(400, err, err.errors[0].message);
+    result = _error(400, err);
     return callback(400, { data: result });
   }
 
@@ -95,7 +107,7 @@ Service.signIn = async (params, callback) => {
   };
 
   let err, user;
-  [err, user] = await Untils.to(User.findOne(checkUser));
+  [err, user] = await Untils.to(Admin.findOne(checkUser));
   if (err) {
     let result = _error(3000, err);
     return callback(3000, { data: result });
@@ -119,12 +131,9 @@ Service.signIn = async (params, callback) => {
     const dataToken = {
       id: user.id,
       name: user.name,
-      age: user.age,
       email: user.email,
       address: user.address,
       phone: user.phone,
-      role: user.role,
-      new: user.new,
     };
     const accessToken = jwt.sign(dataToken, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "10d",

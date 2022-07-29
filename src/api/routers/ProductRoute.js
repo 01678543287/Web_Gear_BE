@@ -94,6 +94,7 @@ router.post("/deleteProduct/:id", (req, res) => {
 
 router.get("/getAProductDetail/:id", (req, res) => {
   let params = req.body;
+  params.id = req.params.id;
   ServiceProduct.getAProductDetail(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;

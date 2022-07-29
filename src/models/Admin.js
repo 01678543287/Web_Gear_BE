@@ -2,8 +2,8 @@ const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
 const bcrypt = require("bcrypt");
 
-const Users = db.sequelize.define(
-  "users",
+const Admin = db.sequelize.define(
+  "admins",
   {
     id: {
       type: Sequelize.UUID,
@@ -14,14 +14,14 @@ const Users = db.sequelize.define(
     name: {
       type: Sequelize.STRING,
     },
+    gender: {
+      type: Sequelize.INTEGER,
+    },
+    birthday: {
+      type: "TIMESTAMPS",
+    },
     avatar: {
       type: Sequelize.STRING,
-    },
-    gender: {
-      type: Sequelize.STRING,
-    },
-    age: {
-      type: Sequelize.INTEGER,
     },
     email: {
       type: Sequelize.STRING,
@@ -44,29 +44,29 @@ const Users = db.sequelize.define(
         len: 10,
       },
     },
-    role: {
-      type: Sequelize.INTEGER,
-    },
-    new: {
-      type: Sequelize.INTEGER,
-    },
     status: {
       type: Sequelize.INTEGER,
+    },
+    home_town: {
+      type: Sequelize.STRING,
+    },
+    cccd: {
+      type: Sequelize.STRING,
     },
   },
   {
     hooks: {
-      beforeCreate: async (user) => {
-        if (user.password) {
+      beforeCreate: async (admin) => {
+        if (admin.password) {
           const salt = await bcrypt.genSaltSync(10, "a");
-          user.password = bcrypt.hashSync(user.password, salt);
+          admin.password = bcrypt.hashSync(admin.password, salt);
         }
       },
     },
   },
   {
-    tableName: "users",
+    tableName: "admins",
   }
 );
 
-module.exports = Users;
+module.exports = Admin;

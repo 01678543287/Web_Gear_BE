@@ -1,5 +1,5 @@
 const { DateTime } = require("luxon");
-const { eachLimit } = require("async");
+const { eachLimit, forEach } = require("async");
 const {
   uploadFileImage,
   multer,
@@ -10,12 +10,16 @@ const db = require("../../config/connectDB");
 const Product = require("../../models/Product");
 const Category = require("../../models/Category");
 const Cate_Product = require("../../models/Cate_Product");
+const Comment = require("../../models/Comment");
+const Rate = require("../../models/Rate");
+const User = require("../../models/Users");
 
 const Untils = require("../modules/Untils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
 const { sequelize } = require("../../config/connectDB");
+const { QueryTypes } = require("sequelize");
 const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
@@ -28,8 +32,8 @@ Service.getAllProduct = async (params, callback) => {
       raw: true,
     })
   );
-  if (!resultProduct) {
-    let result = _error(7000);
+  if (errProduct) {
+    let result = _error(7000, errProduct);
     return callback(7000, { data: result });
   }
   if (!resultProduct) {
@@ -41,8 +45,12 @@ Service.getAllProduct = async (params, callback) => {
     resultProduct,
     1,
     async (item) => {
-      let img = Untils.safeParse(item.image_list);
-      item.image_list = img;
+      item.image_link = Untils.linkImage + item.image_link;
+      let imageList = Untils.safeParse(item.image_list);
+      for (img of imageList) {
+        img.image_link = Untils.linkImage + img.image_link;
+      }
+      item.image_list = imageList;
     },
     (err, result) => {
       if (err) {
@@ -111,6 +119,7 @@ Service.createProduct = async (params, callback) => {
     let result = _error(9998, errUpload);
     return callback(9998, { data: result });
   }
+
   const imageDemo = rsUpload;
   let listImage = [];
 
@@ -142,8 +151,8 @@ Service.createProduct = async (params, callback) => {
     Product.create(dataProduct, { raw: true })
   );
   if (errProduct) {
-    let result = _error(4000, errProduct);
-    return callback(4000, { data: result });
+    let result = _error(7003, errProduct);
+    return callback(7003, { data: result });
   }
   let errCatePro, rsCatePro;
   [errCatePro, rsCatePro] = await Untils.to(
@@ -316,14 +325,14 @@ Service.editProduct = async (params, callback) => {
 
 Service.deleteProduct = async (params, callback) => {
   if (!params) {
-    result = _error(1000);
+    let result = _error(1000);
     return callback(1000, { data: result });
   }
 
   let { id } = params;
 
   if (!id) {
-    result = _error(1000);
+    let result = _error(1000);
     return callback(1000, { data: result });
   }
 
@@ -351,32 +360,78 @@ Service.deleteProduct = async (params, callback) => {
 
 Service.getAProductDetail = async (params, callback) => {
   if (!params) {
-    result = _error(1000);
+    let result = _error(1000);
     return callback(1000, { data: result });
   }
 
   let { id } = params;
 
   if (!id) {
-    result = _error(1000);
+    let result = _error(1000);
     return callback(1000, { data: result });
   }
 
   let where = {
     where: {
       id: id,
+      status: 0,
     },
     raw: true,
   };
 
   let errProduct, rsProduct;
-  [errProduct, rsProduct] = await Untils.to(Product.update(dataProduct, where));
+  [errProduct, rsProduct] = await Untils.to(Product.findOne(where));
   if (errProduct) {
     let result = _error(500, errProduct);
     return callback(500, { data: result });
   }
+  if (!rsProduct) {
+    let result = _error(7000);
+    return callback(7000, { data: result });
+  }
+
+  rsProduct.discount = parseFloat(rsProduct.discount);
+  rsProduct.price = parseFloat(rsProduct.price);
+  rsProduct.image_link = Untils.linkImage + rsProduct.image_link;
+  rsProduct.image_list = Untils.safeParse(rsProduct.image_list);
+  for (image of rsProduct.image_list) {
+    image.image_link = Untils.linkImage + image.image_link;
+  }
+
+  let cmt = await db.sequelize.query(
+    `SELECT U.ID as user_id,
+            U.NAME as user_name,
+            U.AVATAR as user_avatar,
+            C.*
+    FROM  COMMENT AS C INNER JOIN USERS AS U ON C.USER_ID = U.ID,
+          PRODUCTS AS P
+    WHERE U.STATUS = 1 AND P.ID = '${id}'`,
+    { type: QueryTypes.SELECT, raw: true }
+  );
+  rsProduct.cmt = cmt;
+
+  let findRate = {
+    where: {
+      product_id: id,
+    },
+    raw: true,
+  };
+  let errRate, rsRate;
+  [errRate, rsRate] = await Untils.to(Rate.findAll(findRate));
+  if (errRate) {
+    console.log("get rate product error: ", errRate);
+  }
+  let totalPoint = 0;
+  let count = 1;
+  rsRate.forEach((rate) => {
+    totalPoint += rate.point;
+    count++;
+  });
+
+  rsProduct.rate = totalPoint / count;
 
   let result = _success(200);
+  result.product = rsProduct;
   return callback(null, result);
 };
 

@@ -35,13 +35,13 @@ Service.getAllCategory = async (params, callback) => {
 
 Service.createCategory = async (params, callback) => {
     if (!params) {
-        result = _error(1000, err)
+        let result = _error(1000)
         return callback(1000, { data: result })
     }
 
     let { name, parent_id } = params
     if (!name) {
-        result = _error(1000, err)
+        let result = _error(1000)
         return callback(1000, { data: result })
     }
 

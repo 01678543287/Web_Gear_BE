@@ -87,6 +87,8 @@ connectDB();
 app.use(`${urlApi}/category`, require("./src/api/routers/CategoryRoute"));
 //User
 app.use(`${urlApi}/user`, require("./src/api/routers/UserRoute"));
+//Admin
+app.use(`${urlApi}/admin`, require("./src/api/routers/AdminRoute"));
 //Promo
 app.use(`${urlApi}/promo`, require("./src/api/routers/PromoeRoute"));
 //Voucher

@@ -43,7 +43,7 @@ router.post("/create", authenticateAdminToken, (req, res) => {
   });
 });
 
-router.get("/getPromo/:promo_id", (req, res) => {
+router.get("/getPromo/:promo_id", authenticateToken, (req, res) => {
   let params = req.params;
   ServicePromo.getPromoByID(params, (err, result) => {
     result = result || {};

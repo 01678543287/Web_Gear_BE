@@ -17,7 +17,7 @@ router.get('/getAllHistoryByUser', authenticateToken, (req, res) => {
   })
 })
 
-router.post('/create', authenticateAdminToken, (req, res) => {
+router.post('/create', authenticateAdminToken, (req, res) => {// chua code
   let params = req.body;
   ServiceCategory.createCategory(params, (err, result) => {
     result = result || {};
@@ -27,7 +27,7 @@ router.post('/create', authenticateAdminToken, (req, res) => {
   })
 })
 
-router.put('/edit', authenticateAdminToken, (req, res) => {
+router.put('/edit', authenticateAdminToken, (req, res) => {// chua code
   let params = req.body;
   ServiceCategory.editCategory(params, (err, result) => {
     result = result || {};
@@ -37,7 +37,7 @@ router.put('/edit', authenticateAdminToken, (req, res) => {
   })
 })
 
-router.delete('/delete', authenticateAdminToken, (req, res) => {
+router.delete('/delete', authenticateAdminToken, (req, res) => {// chua code
   let params = req.body;
   ServiceCategory.deleteCategory(params, (err, result) => {
     result = result || {};

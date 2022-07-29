@@ -103,7 +103,7 @@ router.get("/getUserByID/:user_id", (req, res) => {
   });
 });
 
-router.get("/getUsers", (req, res) => {
+router.get("/getUsers", authenticateAdminToken, (req, res) => {
   let params = req.query;
   UserService.getUsers(params, (err, result) => {
     result = result || {};

@@ -26,7 +26,7 @@ router.post("/signUpAdmin", cpUpload, authenticateAdminToken, (req, res) => {
   });
 });
 
-router.get("/signInAdmin", (req, res) => {
+router.get("/signInAdmin",authenticateAdminToken, (req, res) => {
   let params = req.body;
   AdminService.signIn(params, (err, result) => {
     result = result || {};
@@ -83,7 +83,7 @@ router.delete("/delete", authenticateAdminToken, (req, res) => {
   });
 });
 
-router.get("/getUserByID/:user_id", (req, res) => {
+router.get("/getUserByID/:user_id", (req, res) => {// chua code
   let params = req.params;
   AdminService.getUserByID(params, (err, result) => {
     result = result || {};
@@ -102,7 +102,7 @@ router.get("/getUserByID/:user_id", (req, res) => {
   });
 });
 
-router.get("/getUsers", (req, res) => {
+router.get("/getUsers", (req, res) => {//chua code
   let params = req.query;
   AdminService.getUsers(params, (err, result) => {
     result = result || {};

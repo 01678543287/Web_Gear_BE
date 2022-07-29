@@ -29,7 +29,7 @@ const cpUpload = multer.fields([
   { name: "image_link", maxCount: 1 },
   { name: "image_list", maxCount: 10 },
 ]);
-router.post("/createProduct", cpUpload, (req, res) => {
+router.post("/createProduct", authenticateAdminToken, cpUpload, (req, res) => {
   let params = req.body;
   params.image_link = req.files["image_link"][0];
   params.image_list = req.files["image_list"];
@@ -50,7 +50,7 @@ router.post("/createProduct", cpUpload, (req, res) => {
   });
 });
 
-router.put("/editProduct/:id", cpUpload, (req, res) => {
+router.put("/editProduct/:id", authenticateAdminToken, cpUpload, (req, res) => {
   let params = req.body;
   params.image_link = req.files["image_link"][0];
   params.image_list = req.files["image_list"];
@@ -72,7 +72,7 @@ router.put("/editProduct/:id", cpUpload, (req, res) => {
   });
 });
 
-router.post("/deleteProduct/:id", (req, res) => {
+router.post("/deleteProduct/:id", authenticateAdminToken, (req, res) => {
   let params = req.body;
   params.id = req.params.id;
   ServiceProduct.deleteProduct(params, (err, result) => {

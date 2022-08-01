@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
 
-const History = db.sequelize.define(
-  "history",
+const Cart_Detail = db.sequelize.define(
+  "card_detail",
   {
     id: {
       type: Sequelize.UUID,
@@ -10,16 +10,22 @@ const History = db.sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       allowNull: false,
     },
-    user_id: {
+    card_id: {
       type: Sequelize.CHAR(36),
     },
     product_id: {
       type: Sequelize.CHAR(36),
     },
+    qty: {
+      type: Sequelize.INTEGER,
+    },
+    rate: {
+      type: Sequelize.INTEGER,
+    },
   },
   {
-    tableName: "history",
+    tableName: "card_detail",
   }
 );
 
-module.exports = History;
+module.exports = Cart_Detail;

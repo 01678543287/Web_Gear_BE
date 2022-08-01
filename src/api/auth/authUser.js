@@ -3,7 +3,9 @@ const jwt = require("jsonwebtoken");
 let authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"]
     ? req.headers["authorization"]
-    : req.headers["access_token"];
+    : req.headers["access_token"]
+    ? req.headers["access_token"]
+    : req.cookies.access_token;
   if (!authHeader) return res.sendStatus(401);
   let token;
   if (!authHeader && authHeader.split(" ")[0] === "Bearer") {
@@ -21,6 +23,16 @@ let authenticateToken = (req, res, next) => {
   });
 };
 
+let verifyTokenUser = (token) => {
+  return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) {
+      console.log(`Verify token error: ${err}`);
+    }
+    return user;
+  });
+};
+
 module.exports = {
   authenticateToken,
+  verifyTokenUser,
 };

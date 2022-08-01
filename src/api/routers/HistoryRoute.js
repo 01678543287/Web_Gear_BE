@@ -17,9 +17,9 @@ router.get('/getAllHistoryByUser', authenticateToken, (req, res) => {
   })
 })
 
-router.post('/create', authenticateAdminToken, (req, res) => {// chua code
+router.post('/addHistoryProduct', authenticateAdminToken, (req, res) => {
   let params = req.body;
-  ServiceCategory.createCategory(params, (err, result) => {
+  ServiceHistory.addHistoryProduct(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
@@ -27,25 +27,6 @@ router.post('/create', authenticateAdminToken, (req, res) => {// chua code
   })
 })
 
-router.put('/edit', authenticateAdminToken, (req, res) => {// chua code
-  let params = req.body;
-  ServiceCategory.editCategory(params, (err, result) => {
-    result = result || {};
-    let { errorCode, message, data, statusCode } = result;
-    if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
-    return Response.Success(req, res, 'success', result)
-  })
-})
-
-router.delete('/delete', authenticateAdminToken, (req, res) => {// chua code
-  let params = req.body;
-  ServiceCategory.deleteCategory(params, (err, result) => {
-    result = result || {};
-    let { errorCode, message, data, statusCode } = result;
-    if (err) return Response.Error(req, res, errorCode, message, data, statusCode, err)
-    return Response.Success(req, res, 'success', result)
-  })
-})
 
 
 module.exports = router;

@@ -13,6 +13,7 @@ const Cate_Product = require("../../models/Cate_Product");
 const Comment = require("../../models/Comment");
 const Rate = require("../../models/Rate");
 const User = require("../../models/Users");
+const History = require("../../models/History");
 
 const Untils = require("../modules/Untils");
 const _error = Untils._error;
@@ -364,7 +365,7 @@ Service.getAProductDetail = async (params, callback) => {
     return callback(1000, { data: result });
   }
 
-  let { id } = params;
+  let { id, user } = params;
 
   if (!id) {
     let result = _error(1000);
@@ -388,6 +389,28 @@ Service.getAProductDetail = async (params, callback) => {
   if (!rsProduct) {
     let result = _error(7000);
     return callback(7000, { data: result });
+  }
+
+  //update view for product
+  let dataUpateP = {
+    view: parseInt(rsProduct.view) + 1,
+  };
+  let errP, rsP;
+  [errP, rsP] = await Untils.to(Product.update(dataUpateP, where));
+  if (errP) {
+    console.log("update view + 1 failed");
+  }
+  // add history
+  if (user) {
+    let dataH = {
+      product_id: id,
+      user_id: user.id,
+    };
+    let errH, rsH;
+    [errH, rsH] = await Untils.to(History.create(dataH));
+    if (errH) {
+      console.log(`Create history error: ${errH}`);
+    }
   }
 
   rsProduct.discount = parseFloat(rsProduct.discount);

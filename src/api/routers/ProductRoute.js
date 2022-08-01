@@ -1,6 +1,6 @@
 const express = require("express");
 const { authenticateAdminToken } = require("../auth/authAdmin");
-const { authenticateToken } = require("../auth/authUser");
+const { authenticateToken, verifyTokenUser } = require("../auth/authUser");
 const ServiceProduct = require("../modules/ProductService");
 const Response = require("../Response");
 const router = express.Router();
@@ -92,9 +92,15 @@ router.post("/deleteProduct/:id", authenticateAdminToken, (req, res) => {
   });
 });
 
-router.get("/getAProductDetail/:id", (req, res) => {
+router.post("/getAProductDetail/:id", (req, res) => {
   let params = req.body;
   params.id = req.params.id;
+  if (req.headers["authorization"] || req.headers["access_token"]) {
+    const token = req.headers["authorization"]
+      ? req.headers["authorization"]
+      : req.headers["access_token"];
+    params.user = verifyTokenUser(token);
+  }
   ServiceProduct.getAProductDetail(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;

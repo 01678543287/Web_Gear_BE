@@ -23,6 +23,9 @@ router.post("/signUp", cpUpload, (req, res) => {
         statusCode,
         err
       );
+    res.cookie("access_token", result.access_token, {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     return Response.Success(req, res, "success", result);
   });
 });
@@ -42,6 +45,9 @@ router.get("/signIn", (req, res) => {
         statusCode,
         err
       );
+    res.cookie("access_token", result.access_token, {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     return Response.Success(req, res, "success", result);
   });
 });

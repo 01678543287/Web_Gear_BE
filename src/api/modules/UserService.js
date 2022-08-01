@@ -11,7 +11,7 @@ const {
 
 const db = require("../../config/connectDB");
 const User = require("../../models/Users");
-const Card = require("../../models/Card");
+const Card = require("../../models/Cart");
 
 const Untils = require("../modules/Untils");
 const _error = Untils._error;
@@ -25,7 +25,7 @@ let Service = {};
 Service.createUser = async (params, callback) => {
   let { name, age, email, phone, address, password, avatar, gender } = params;
   if (!email || !password) {
-    result = _error(1000, err);
+    let result = _error(1000, err);
     return callback(1000, { data: result });
   }
 
@@ -49,14 +49,13 @@ Service.createUser = async (params, callback) => {
     address: address,
     password: password,
     phone: phone,
-    role: 0,
     new: 0,
   };
   let result, err;
   [err, result] = await Untils.to(User.create(dataUser, { raw: true }));
 
   if (err) {
-    result = _error(400, err, err.errors[0].message);
+    let result = _error(400, err, err.message);
     return callback(400, { data: result });
   }
 
@@ -67,7 +66,6 @@ Service.createUser = async (params, callback) => {
     email: result.email,
     address: result.address,
     phone: result.phone,
-    role: result.role,
     new: result.new,
   };
 
@@ -123,7 +121,6 @@ Service.signIn = async (params, callback) => {
       email: user.email,
       address: user.address,
       phone: user.phone,
-      role: user.role,
       new: user.new,
     };
     const accessToken = jwt.sign(dataToken, process.env.ACCESS_TOKEN_SECRET, {
@@ -153,7 +150,6 @@ Service.lock = async (params, callback) => {
     User.findOne({
       where: {
         id: params.user_id,
-        role: 0,
       },
     })
   );
@@ -194,7 +190,7 @@ Service.delete = async (params, callback) => {
   let err, checkExist;
   [err, checkExist] = await Untils.to(
     User.findOne({
-      where: { id: params.user_id, role: 0 },
+      where: { id: params.user_id },
     })
   );
   if (err) {
@@ -271,13 +267,12 @@ Service.getUsers = async (params, callback) => {
     return callback(1000, { data: result });
   }
 
-  let { role, status } = params;
+  let { status } = params;
 
   let errUser, rsUsers;
   [errUser, rsUsers] = await Untils.to(
     User.findAll({
       where: {
-        role: role ? role : 0,
         status: status ? status : 0,
       },
       attributes: { exclude: ["password"] },

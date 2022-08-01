@@ -38,6 +38,10 @@ module.exports.messages = {
 
   8000: "Cate-Product failed",
 
+  8100: "Create cart failed",
+  8101: "Create cart_detail failed",
+  8102: "Check exist cart failed",
+
   9998: "Upload files failed",
   9999: "Error",
 };

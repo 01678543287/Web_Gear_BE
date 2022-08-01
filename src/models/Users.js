@@ -17,9 +17,6 @@ const Users = db.sequelize.define(
     avatar: {
       type: Sequelize.STRING,
     },
-    gender: {
-      type: Sequelize.STRING,
-    },
     age: {
       type: Sequelize.INTEGER,
     },
@@ -43,9 +40,6 @@ const Users = db.sequelize.define(
         is: /\d{10}$/i,
         len: 10,
       },
-    },
-    role: {
-      type: Sequelize.INTEGER,
     },
     new: {
       type: Sequelize.INTEGER,

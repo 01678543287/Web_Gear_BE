@@ -6,7 +6,7 @@ function Success(req, res, message = 'success', data = {}, statusCode = 200) {
     };
     return res.status(statusCode).json(response);
 }
-function Error(req, res, error = 1, message = '', data = {}, statusCode = 400, errorCodeDebug = 'EDEFAULT') {
+function Error(req, res, error = 1, message = '', data = {}, statusCode = 200, errorCodeDebug = 'EDEFAULT') {
     response = {
         error: error,
         codeDebug: errorCodeDebug,

@@ -3,6 +3,7 @@ module.exports.messages = {
 
   400: "Bad request",
   404: "Not found",
+  403: "Unauthorized",
 
   500: "Server error",
 
@@ -41,6 +42,14 @@ module.exports.messages = {
   8100: "Create cart failed",
   8101: "Create cart_detail failed",
   8102: "Check exist cart failed",
+  8103: "Delete product go out cart failed",
+  8104: "Add to cart failed",
+  8105: "Update cart failed",
+
+  8200: "Create order failed",
+  8201: "Order not found",
+
+  8300: "Create transaction failed",
 
   9998: "Upload files failed",
   9999: "Error",

@@ -9,7 +9,7 @@ const { multer } = require("../upload/UploadFileCloud");
 const cpUpload = multer.fields([{ name: "avatar", maxCount: 1 }]);
 router.post("/signUp", cpUpload, (req, res) => {
   let params = req.body;
-  params.avatar = req.files["avatar"][0];
+  params.avatar = req.files ? req.files["avatar"][0] : null;
   UserService.createUser(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
@@ -30,8 +30,9 @@ router.post("/signUp", cpUpload, (req, res) => {
   });
 });
 
-router.get("/signIn", (req, res) => {
+router.post("/signIn", (req, res) => {
   let params = req.body;
+  console.log(params, "pr=======");
   UserService.signIn(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;

@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 let authenticateToken = (req, res, next) => {
+  // console.log(req.headers["authorization"], "headers");
   const authHeader = req.headers["authorization"]
     ? req.headers["authorization"]
     : req.headers["access_token"]
@@ -13,6 +14,7 @@ let authenticateToken = (req, res, next) => {
   } else {
     token = authHeader;
   }
+  console.log(token, "token");
 
   if (!token) return res.sendStatus(401);
 
@@ -26,7 +28,7 @@ let authenticateToken = (req, res, next) => {
 let verifyTokenUser = (token) => {
   return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
     if (err) {
-      console.log(`Verify token error: ${err}`);
+      return res.sendStatus(403);
     }
     return user;
   });

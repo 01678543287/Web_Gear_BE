@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
 
-const Cart_Detail = db.sequelize.define(
-  "card_detail",
+const Transaction = db.sequelize.define(
+  "transaction",
   {
     id: {
       type: Sequelize.UUID,
@@ -10,23 +10,22 @@ const Cart_Detail = db.sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       allowNull: false,
     },
-    card_id: {
+    order_id: {
       type: Sequelize.CHAR(36),
     },
-    product_id: {
+    status: {
+      type: Sequelize.INTEGER,
+    },
+    amount: {
+      type: Sequelize.DECIMAL(15, 2),
+    },
+    user_id: {
       type: Sequelize.CHAR(36),
     },
-    qty: {
-      type: Sequelize.INTEGER,
-    },
-    rate: {
-      type: Sequelize.INTEGER,
-    },
-    
   },
   {
-    tableName: "card_detail",
+    tableName: "transaction",
   }
 );
 
-module.exports = Cart_Detail;
+module.exports = Transaction;

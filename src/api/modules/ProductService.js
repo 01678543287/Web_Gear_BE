@@ -30,6 +30,7 @@ Service.getAllProduct = async (params, callback) => {
   [errProduct, resultProduct] = await Untils.to(
     Product.findAll({
       where: { status: 0 },
+      order: [["createdAt", "DESC"]],
       raw: true,
     })
   );
@@ -431,6 +432,7 @@ Service.getAProductDetail = async (params, callback) => {
     WHERE U.STATUS = 1 AND P.ID = '${id}'`,
     { type: QueryTypes.SELECT, raw: true }
   );
+
   rsProduct.cmt = cmt;
 
   let findRate = {

@@ -3,12 +3,14 @@ const app = express();
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8000;
 const { connectDB } = require("./src/config/connectDB");
 
 dotenv.config();
 
 const urlApi = "/api";
+
+process.env.TZ = "Asia/Ho_Chi_Minh";
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -36,56 +38,6 @@ app.use((error, req, res, next) => {
 
 connectDB();
 
-// app.get('/', (req, res) => {
-//   let params = req.body;
-//   console.log(JSON.stringify(params))
-//   return res.send('Hello World 123')
-// })
-
-//Upload File
-// const { Storage } = require("@google-cloud/storage");
-// const Multer = require("multer");
-
-// const multer = Multer({
-//   storage: Multer.memoryStorage(),
-//   limits: {
-//     fileSize: 2 * 1024 * 1024, // 2MB
-//   },
-// });
-
-// const storage = new Storage({
-//   projectId: process.env.PROJECT_ID,
-//   keyFile: "myKey",
-// });
-// const bucket = storage.bucket("cloudimage123");
-// const fileStorageEngine = Multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, "./images");
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, Date.now() + "-" + file.originalname);
-//   },
-// });
-// const upload = Multer({
-//   storage: fileStorageEngine,single("imagefile")
-// });
-// const { multer, bucket } = require("./src/api/upload/UploadFileCloud");
-// app.post("/upload", multer.single("imagefile"), (req, res) => {
-//   try {
-//     if (req.file) {
-//       const blob = bucket.file(Date.now() + ":" + req.file.originalname);
-//       const blobStream = blob.createWriteStream();
-
-//       blobStream.on("finish", () => {
-//         res.status(200).send("success");
-//       });
-//       blobStream.end(req.file.buffer);
-//     }
-//   } catch (error) {
-//     res.status(500).send("server error");
-//   }
-// });
-
 //Category
 app.use(`${urlApi}/category`, require("./src/api/routers/CategoryRoute"));
 //User
@@ -104,6 +56,12 @@ app.use(`${urlApi}/warehouse`, require("./src/api/routers/WarehouseRoute"));
 app.use(`${urlApi}/product`, require("./src/api/routers/ProductRoute"));
 //Cart
 app.use(`${urlApi}/cart`, require("./src/api/routers/CartRoute"));
+//Search
+app.use(`${urlApi}/search`, require("./src/api/routers/SearchRoute"));
+//Checkout
+app.use(`${urlApi}/checkout`, require("./src/api/routers/CheckoutRoute"));
+//Order
+app.use(`${urlApi}/order`, require("./src/api/routers/OrderRoute"));
 
 app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`);

@@ -30,15 +30,16 @@ Service.createUser = async (params, callback) => {
   }
 
   const idImage = Untils.generateId(8);
-
   let errUpload, rsUpload;
-  [errUpload, rsUpload] = await Untils.to(uploadFileImage(avatar, idImage));
-  if (errUpload) {
-    let result = _error(9998, errUpload);
-    return callback(9998, { data: result });
+  if (avatar) {
+    [errUpload, rsUpload] = await Untils.to(uploadFileImage(avatar, idImage));
+    if (errUpload) {
+      let result = _error(9998, errUpload);
+      return callback(9998, { data: result });
+    }
   }
 
-  const avatarImg = rsUpload;
+  const avatarImg = rsUpload ? rsUpload : null;
 
   let dataUser = {
     name: name,
@@ -67,6 +68,7 @@ Service.createUser = async (params, callback) => {
     address: result.address,
     phone: result.phone,
     new: result.new,
+    role: "GUEST",
   };
 
   const accessToken = jwt.sign(dataToken, process.env.ACCESS_TOKEN_SECRET, {
@@ -120,8 +122,10 @@ Service.signIn = async (params, callback) => {
       age: user.age,
       email: user.email,
       address: user.address,
+      avatar: Untils.linkImage + user.avatar,
       phone: user.phone,
       new: user.new,
+      role: "GUEST",
     };
     const accessToken = jwt.sign(dataToken, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "10d",

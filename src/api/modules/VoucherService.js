@@ -108,7 +108,7 @@ Service.getVoucherForUser = async (params, callback) => {
     return callback(1000, { data: result });
   }
 
-  let { user } = params;
+  let { user, price } = params;
 
   let findVoucher = {
     where: {
@@ -140,6 +140,17 @@ Service.getVoucherForUser = async (params, callback) => {
     }
     vou.code = rsPromo.code;
     vou.title = rsPromo.title;
+    if (rsPromo.type == 0) {
+      // giảm giá theo phần trăm
+      vou.discount = price * (rsPromo.value_type / 100);
+    } else if (rsPromo.type == 1) {
+      // giảm giá trực tiếp
+      if (price > parseInt(rsPromo.value_type)) {
+        vou.discount = parseInt(rsPromo.value_type);
+      } else {
+        vou.discount = price;
+      }
+    }
   }
 
   let result = _success(200);

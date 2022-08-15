@@ -25,7 +25,7 @@ router.get("/use", authenticateToken, (req, res) => {
   });
 });
 
-router.get("/getVoucherForUser", authenticateToken, (req, res) => {
+router.post("/getVoucherForUser", authenticateToken, (req, res) => {
   let params = req.body;
   params.user = req.user;
   ServiceVoucher.getVoucherForUser(params, (err, result) => {

@@ -10,8 +10,6 @@ dotenv.config();
 
 const urlApi = "/api";
 
-process.env.TZ = "Asia/Ho_Chi_Minh";
-
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -62,6 +60,10 @@ app.use(`${urlApi}/search`, require("./src/api/routers/SearchRoute"));
 app.use(`${urlApi}/checkout`, require("./src/api/routers/CheckoutRoute"));
 //Order
 app.use(`${urlApi}/order`, require("./src/api/routers/OrderRoute"));
+//Transaction
+app.use(`${urlApi}/transaction`, require("./src/api/routers/TransactionRoute"));
+//Ribbon
+app.use(`${urlApi}/ribbon`, require("./src/api/routers/RibbonRoute"));
 
 app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`);

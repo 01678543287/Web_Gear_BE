@@ -6,7 +6,9 @@ let authenticateToken = (req, res, next) => {
     ? req.headers["authorization"]
     : req.headers["access_token"]
     ? req.headers["access_token"]
-    : req.cookies.access_token;
+    : req.cookies.access_token
+    ? req.cookies.access_token
+    : req.body.access_token;
   if (!authHeader) return res.sendStatus(401);
   let token;
   if (!authHeader && authHeader.split(" ")[0] === "Bearer") {

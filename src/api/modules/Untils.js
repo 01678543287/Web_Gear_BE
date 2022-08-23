@@ -41,7 +41,10 @@ let generateId = (length) => {
   );
 };
 
-const linkImage = "https://storage.googleapis.com/cloudimage123/";
+// const linkImage = "https://storage.googleapis.com/cloudimage123/";
+const linkImage = "https://res.cloudinary.com/denztyim4/image/upload/v1661151316/DOANTHUCTAP/images/";
+const linkImageCloudinary =
+  "https://res.cloudinary.com/denztyim4/image/upload/v1661151316/DOANTHUCTAP/images/";
 
 module.exports = {
   to,
@@ -50,4 +53,5 @@ module.exports = {
   safeParse,
   generateId,
   linkImage,
+  linkImageCloudinary,
 };

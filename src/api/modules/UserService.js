@@ -155,6 +155,7 @@ Service.lock = async (params, callback) => {
       where: {
         id: params.user_id,
       },
+      raw: true,
     })
   );
   if (err) {
@@ -167,7 +168,7 @@ Service.lock = async (params, callback) => {
   }
 
   let dataUpdate = {
-    status: 1,
+    status: checkExist.status === 0 ? 1 : 0,
   };
 
   let errLock, rsLock;
@@ -276,9 +277,10 @@ Service.getUsers = async (params, callback) => {
   let errUser, rsUsers;
   [errUser, rsUsers] = await Untils.to(
     User.findAll({
-      where: {
-        status: status ? status : 0,
-      },
+      // where: {
+      //   status: status ? status : 0,
+      // },
+      order: [["email", "ASC"]],
       attributes: { exclude: ["password"] },
       raw: true,
     })

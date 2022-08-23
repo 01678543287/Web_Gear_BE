@@ -46,16 +46,21 @@ Service.getRibbon = async (params, callback) => {
     for (item of ribDetail) {
       let errPro, rsPro;
       [errPro, rsPro] = await Untils.to(
-        Product.findOne({ where: { id: item.product_id }, raw: true })
+        Product.findOne({
+          where: { id: item.product_id, status: 0 },
+          raw: true,
+        })
       );
-      rsPro.discount = parseFloat(rsPro.discount);
-      rsPro.price = parseFloat(rsPro.price);
-      rsPro.image_link = Untils.linkImage + rsPro.image_link;
-      rsPro.image_list = Untils.safeParse(rsPro.image_list);
-      for (image of rsPro.image_list) {
-        image.image_link = Untils.linkImage + image.image_link;
+      if (rsPro) {
+        rsPro.discount = parseFloat(rsPro.discount);
+        rsPro.price = parseFloat(rsPro.price);
+        rsPro.image_link = Untils.linkImage + rsPro.image_link;
+        rsPro.image_list = Untils.safeParse(rsPro.image_list);
+        for (image of rsPro.image_list) {
+          image.image_link = Untils.linkImage + image.image_link;
+        }
+        listProduct.push(rsPro);
       }
-      listProduct.push(rsPro);
     }
     rib.products = listProduct;
   }

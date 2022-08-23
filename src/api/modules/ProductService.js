@@ -1,7 +1,8 @@
 const { DateTime } = require("luxon");
 const { eachLimit, forEach } = require("async");
 const {
-  uploadFileImage,
+  uploadFileImageCloudinaryCloudinary,
+  uploadFileImageCloudinary,
   multer,
   bucket,
 } = require("../upload/UploadFileCloud");
@@ -66,11 +67,52 @@ Service.getAllProduct = async (params, callback) => {
   );
 };
 
+Service.getAllProductAdmin = async (params, callback) => {
+  let errProduct, resultProduct;
+  [errProduct, resultProduct] = await Untils.to(
+    Product.findAll({
+      order: [["createdAt", "DESC"]],
+      raw: true,
+    })
+  );
+  if (errProduct) {
+    let result = _error(7000, errProduct);
+    return callback(7000, { data: result });
+  }
+  if (!resultProduct) {
+    let result = _error(7000, errProduct);
+    return callback(7000, { data: result });
+  }
+
+  eachLimit(
+    resultProduct,
+    1,
+    async (item) => {
+      item.image_link = Untils.linkImage + item.image_link;
+      let imageList = Untils.safeParse(item.image_list);
+      for (img of imageList) {
+        img.image_link = Untils.linkImage + img.image_link;
+      }
+      item.image_list = imageList;
+    },
+    (err, result) => {
+      if (err) {
+        result = _error(7000, err);
+        return callback(7000, { data: result });
+      }
+      result = _success(200);
+      result.products = resultProduct;
+      return callback(null, result);
+    }
+  );
+};
+
 Service.createProduct = async (params, callback) => {
   if (!params) {
     result = _error(1000, err);
     return callback(1000, { data: result });
   }
+  params.warehouse_id = "5b9d1d26-d443-48d0-8761-68ccf4303644";
   let {
     name,
     price,
@@ -83,6 +125,10 @@ Service.createProduct = async (params, callback) => {
     qty,
     cate_id,
   } = params;
+
+  // const idImage1 = Untils.generateId(8);
+  // let err, rs;
+  // [err, rs] = await Untils.to(uploadFileImageCloudinaryCloudinary(image_link, idImage1));
 
   if (
     !name ||
@@ -116,7 +162,9 @@ Service.createProduct = async (params, callback) => {
   const idImage = Untils.generateId(8);
 
   let errUpload, rsUpload;
-  [errUpload, rsUpload] = await Untils.to(uploadFileImage(image_link, idImage));
+  [errUpload, rsUpload] = await Untils.to(
+    uploadFileImageCloudinary(image_link, idImage)
+  );
   if (errUpload) {
     let result = _error(9998, errUpload);
     return callback(9998, { data: result });
@@ -127,7 +175,7 @@ Service.createProduct = async (params, callback) => {
 
   for (image of image_list) {
     let err, rs;
-    [err, rs] = await Untils.to(uploadFileImage(image, idImage));
+    [err, rs] = await Untils.to(uploadFileImageCloudinary(image, idImage));
     if (err) {
       console.log(err, "upload file failed!!!");
     }
@@ -169,12 +217,6 @@ Service.createProduct = async (params, callback) => {
 };
 
 Service.editProduct = async (params, callback) => {
-  // console.log(params, "ok");
-  // let files = await bucket.getFiles()
-  // files = files[0].filter(f => f.id.includes(dirName + '/'));
-  // console.log(files, "listimage");
-  // return;
-
   if (!params) {
     let result = _error(1000, err);
     return callback(1000, { data: result });
@@ -197,8 +239,8 @@ Service.editProduct = async (params, callback) => {
     !id ||
     !name ||
     !price ||
-    !image_link ||
-    !image_list ||
+    // !image_link ||
+    // !image_list ||
     !qty ||
     !cate_id
   ) {
@@ -223,6 +265,8 @@ Service.editProduct = async (params, callback) => {
     return callback(7000, { data: result });
   }
 
+  //image_link
+
   // delete file old
 
   // const imageLink = rsProduct.image_link;
@@ -242,7 +286,7 @@ Service.editProduct = async (params, callback) => {
   // const idImage = Untils.generateId(8);
 
   // let errUpload, rsUpload;
-  // [errUpload, rsUpload] = await Untils.to(uploadFileImage(image_link, idImage));
+  // [errUpload, rsUpload] = await Untils.to(uploadFileImageCloudinary(image_link, idImage));
   // if (errUpload) {
   //   let result = _error(9998, errUpload);
   //   return callback(9998, { data: result });
@@ -252,7 +296,7 @@ Service.editProduct = async (params, callback) => {
 
   // for (image of image_list) {
   //   let err, rs;
-  //   [err, rs] = await Untils.to(uploadFileImage(image, idImage));
+  //   [err, rs] = await Untils.to(uploadFileImageCloudinary(image, idImage));
   //   if (err) {
   //     console.log(err, "upload file failed!!!");
   //   }
@@ -263,14 +307,42 @@ Service.editProduct = async (params, callback) => {
     name: name,
     price: price,
     content: content ? content : "",
-    view: 0,
-    sold: 0,
-    status: status ? status : 0,
+    status: status ? status : 1,
     discount: discount ? discount : 0,
     // image_link: imageDemo,
     // image_list: JSON.stringify(listImage),
     qty: qty,
   };
+
+  const idImage = Untils.generateId(8);
+
+  if (image_link) {
+    let errUpload, rsUpload;
+    [errUpload, rsUpload] = await Untils.to(
+      uploadFileImageCloudinary(image_link, idImage)
+    );
+    if (errUpload) {
+      let result = _error(9998, errUpload);
+      return callback(9998, { data: result });
+    }
+
+    const imageDemo = rsUpload;
+    dataUpateProduct.image_link = imageDemo;
+  }
+
+  if (image_list) {
+    let listImage = [];
+
+    for (image of image_list) {
+      let err, rs;
+      [err, rs] = await Untils.to(uploadFileImageCloudinary(image, idImage));
+      if (err) {
+        console.log(err, "upload file failed!!!");
+      }
+      listImage.push({ image_link: rs });
+    }
+    dataUpateProduct.image_list = JSON.stringify(listImage);
+  }
 
   let errP, rsP;
   [errP, rsP] = await Untils.to(
@@ -345,11 +417,17 @@ Service.deleteProduct = async (params, callback) => {
     raw: true,
   };
 
+  let errProduct, rsProduct;
+  [errProduct, rsProduct] = await Untils.to(Product.findOne(where));
+  if (errProduct) {
+    let result = _error(500, errProduct);
+    return callback(500, { data: result });
+  }
+
   let dataProduct = {
-    status: 1,
+    status: rsProduct.status && rsProduct.status === 1 ? 0 : 1,
   };
 
-  let errProduct, rsProduct;
   [errProduct, rsProduct] = await Untils.to(Product.update(dataProduct, where));
   if (errProduct) {
     let result = _error(500, errProduct);
@@ -376,7 +454,6 @@ Service.getAProductDetail = async (params, callback) => {
   let where = {
     where: {
       id: id,
-      status: 0,
     },
     raw: true,
   };
@@ -401,7 +478,7 @@ Service.getAProductDetail = async (params, callback) => {
   if (errP) {
     console.log("update view + 1 failed");
   }
-  // add history
+
   if (user) {
     let dataH = {
       product_id: id,
@@ -447,13 +524,28 @@ Service.getAProductDetail = async (params, callback) => {
     console.log("get rate product error: ", errRate);
   }
   let totalPoint = 0;
-  let count = 1;
+  let count = 0;
   rsRate.forEach((rate) => {
     totalPoint += rate.point;
     count++;
   });
 
+  if (count === 0) count = 1;
+
   rsProduct.rate = totalPoint / count;
+
+  const findCate = {
+    where: {
+      product_id: id,
+    },
+    raw: true,
+  };
+  let errC, rsC;
+  [errC, rsC] = await Untils.to(Cate_Product.findOne(findCate));
+
+  if (!errC) {
+    rsProduct.category = rsC;
+  }
 
   let result = _success(200);
   result.product = rsProduct;

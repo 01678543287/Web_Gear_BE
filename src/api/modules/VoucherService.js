@@ -132,12 +132,21 @@ Service.getVoucherForUser = async (params, callback) => {
   for (vou of rsV) {
     let errPromo, rsPromo;
     [errPromo, rsPromo] = await Untils.to(
-      Promo.findOne({ where: { id: vou.promoes_id }, raw: true })
+      Promo.findOne({ where: { id: vou.promoes_id, status: 0 }, raw: true })
     );
     if (errPromo) {
       let result = _error(4001, errPromo);
       return callback(4001, { data: result });
     }
+
+    if (!rsPromo) {
+      const index = rsV.indexOf(vou);
+      if (index > -1) {
+        rsV.splice(index, 1);
+      }
+      continue;
+    }
+
     vou.code = rsPromo.code;
     vou.title = rsPromo.title;
     if (rsPromo.type == 0) {
@@ -265,7 +274,6 @@ Service.sendVoucherForAllUsers = async (params, callback) => {
 
   let findUser = {
     where: {
-      role: 0,
       status: 0,
     },
     raw: true,

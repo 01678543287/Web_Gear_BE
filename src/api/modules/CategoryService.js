@@ -43,6 +43,22 @@ Service.getAllCategory = async (params, callback) => {
   );
 };
 
+Service.getCategory = async (params, callback) => {
+  console.log(params, "pr=0=0=");
+  // return;
+  let err, result;
+  [err, result] = await Untils.to(
+    Category.findOne({ where: { id: params.cate_id }, raw: true })
+  );
+  if (err) {
+    result = _error(2000, err);
+    return callback(2000, { data: result });
+  }
+  let resultCB = Untils._success(200);
+  resultCB.category = result;
+  return callback(null, resultCB);
+};
+
 Service.getProductsByCate = async (params, callback) => {
   let { cate_id } = params;
 
@@ -59,22 +75,24 @@ Service.getProductsByCate = async (params, callback) => {
   for (item of result) {
     let errP, rsP;
     [errP, rsP] = await Untils.to(
-      Product.findOne({ where: { id: item.product_id }, raw: true })
+      Product.findOne({ where: { id: item.product_id, status: 0 }, raw: true })
     );
     if (errP) {
       console.log(`find product error: ${errP}`);
     }
-    rsP.discount = parseFloat(rsP.discount);
-    rsP.price = parseFloat(rsP.price);
-    rsP.image_link = Untils.linkImage + rsP.image_link;
-    rsP.image_list = Untils.safeParse(rsP.image_list);
-    for (image of rsP.image_list) {
-      image.image_link = Untils.linkImage + image.image_link;
+    if (rsP) {
+      rsP.discount = parseFloat(rsP.discount);
+      rsP.price = parseFloat(rsP.price);
+      rsP.image_link = Untils.linkImage + rsP.image_link;
+      rsP.image_list = Untils.safeParse(rsP.image_list);
+      for (image of rsP.image_list) {
+        image.image_link = Untils.linkImage + image.image_link;
+      }
+      // console.log(rsP, "rsssss");
+      products.push(rsP);
     }
-    // console.log(rsP, "rsssss");
-    products.push(rsP);
   }
-//   console.log(products, "pro=====");
+  //   console.log(products, "pro=====");
 
   let resultss = Untils._success(200);
   resultss.products = products;

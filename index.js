@@ -3,6 +3,7 @@ const app = express();
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
+const stripe = require("stripe");
 const port = process.env.PORT || 8000;
 const { connectDB } = require("./src/config/connectDB");
 

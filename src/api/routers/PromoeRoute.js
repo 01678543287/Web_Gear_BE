@@ -81,7 +81,7 @@ router.put("/edit", authenticateAdminToken, (req, res) => {
   });
 });
 
-router.delete("/delete", authenticateAdminToken, (req, res) => {
+router.post("/delete", authenticateAdminToken, (req, res) => {
   let params = req.body;
   ServicePromo.deletePromo(params, (err, result) => {
     result = result || {};

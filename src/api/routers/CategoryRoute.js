@@ -24,6 +24,25 @@ router.get("/getAll", (req, res) => {
   });
 });
 
+router.post("/getCategory", (req, res) => {
+  let params = req.body;
+  ServiceCategory.getCategory(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
 router.get("/getProductsByCate/:cate_id", (req, res) => {
   let params = req.body;
   params.cate_id = req.params.cate_id;

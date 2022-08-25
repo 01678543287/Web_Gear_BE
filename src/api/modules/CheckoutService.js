@@ -15,6 +15,7 @@ const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
 const Transaction = require("../../models/Transaction");
+const Promoes = require("../../models/Promoes");
 const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
@@ -25,7 +26,7 @@ Service.checkout = async (params, callback) => {
     return callback(1000, { data: result });
   }
 
-  let { user, userCheckout, price, discount, note } = params;
+  let { user, userCheckout, price, discount, note, code_voucher } = params;
 
   if (!user) {
     let result = _error(403);
@@ -122,6 +123,21 @@ Service.checkout = async (params, callback) => {
   if (errCart) {
     let result = _error(8105, errCart);
     return callback(8105, { data: result });
+  }
+  //unactive Voucher
+  if (code_voucher) {
+    let errP, rsP;
+    [errP, rsP] = await Untils.to(
+      Promoes.findOne({ where: { code: code_voucher }, raw: true })
+    );
+
+    let errV, rsV;
+    [errV, rsV] = await Untils.to(
+      Voucher.update(
+        { is_active: 1 },
+        { where: { promoes_id: rsP.id, user_id: user.id } }
+      )
+    );
   }
 
   //   console.log(rsOrd.id, "rsOrd");

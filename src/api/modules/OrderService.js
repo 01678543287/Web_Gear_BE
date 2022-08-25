@@ -14,6 +14,7 @@ const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
 const Admin = require("../../models/Admin");
 const Rate = require("../../models/Rate");
+const Transaction = require("../../models/Transaction");
 const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
@@ -299,6 +300,23 @@ Service.changeStatusOrder = async (params, callback) => {
   if (errOrd) {
     let result = _error(8201, errOrd);
     return callback(8201, { data: result });
+  }
+
+  if (status === 2) {
+    let errTrans, rsTrans;
+    [errTrans, rsTrans] = await Untils.to(
+      Transaction.update(
+        { status: 4 },
+        {
+          where: {
+            order_id: orderId,
+          },
+        }
+      )
+    );
+    if (errTrans) {
+      console.log(`create Order error: ${errTrans}`);
+    }
   }
 
   let result = _success(200);

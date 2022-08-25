@@ -65,6 +65,8 @@ app.use(`${urlApi}/order`, require("./src/api/routers/OrderRoute"));
 app.use(`${urlApi}/transaction`, require("./src/api/routers/TransactionRoute"));
 //Ribbon
 app.use(`${urlApi}/ribbon`, require("./src/api/routers/RibbonRoute"));
+//Chart
+app.use(`${urlApi}/chart`, require("./src/api/routers/ChartRoute"));
 
 app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`);

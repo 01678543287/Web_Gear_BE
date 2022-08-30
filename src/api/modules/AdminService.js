@@ -72,8 +72,8 @@ Service.createAdmin = async (params, callback) => {
   [err, result] = await Untils.to(Admin.create(dataUser, { raw: true }));
 
   if (err) {
-    result = _error(400, err);
-    return callback(400, { data: result });
+    result = _error(3002, err);
+    return callback(3002, { data: result });
   }
 
   const dataToken = {
@@ -158,8 +158,8 @@ Service.editAdmin = async (params, callback) => {
   );
 
   if (err) {
-    result = _error(400, err);
-    return callback(400, { data: result });
+    result = _error(3002, err);
+    return callback(3002, { data: result });
   }
 
   const dataToken = {

@@ -53,6 +53,66 @@ router.post("/signIn", (req, res) => {
   });
 });
 
+router.post("/forgetPassword", (req, res) => {
+  let params = req.body;
+  // console.log(params, "pr=======");
+  UserService.forgetPassword(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.post("/verify", (req, res) => {
+  let params = req.body;
+  // console.log(params, "pr=======");
+  UserService.verify(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.post("/changePassword", (req, res) => {
+  let params = req.body;
+  // console.log(params, "pr=======");
+  UserService.changePassword(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
 router.put("/lock", authenticateAdminToken, (req, res) => {
   let params = req.body;
   UserService.lock(params, (err, result) => {

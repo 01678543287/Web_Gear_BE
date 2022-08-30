@@ -17,9 +17,12 @@ module.exports.messages = {
 
   3000: "Login failed",
   3001: "Email not exist",
+  3002: "Email is exist",
   3003: "Account is lock",
   3004: "User id not exists",
   3005: "Password invalid",
+  3006: "Update user failed",
+  3007: "Confirm password not match",
 
   4000: "Create promo failed",
   4001: "Promo not found",

@@ -25,8 +25,7 @@ router.get("/getOrdersForUser", authenticateToken, (req, res) => {
   });
 });
 
-router.get(
-  "/getOrderDetailForUser/:order_id",
+router.get("/getOrderDetailForUser/:order_id",
   authenticateToken,
   (req, res) => {
     let params = req.body;

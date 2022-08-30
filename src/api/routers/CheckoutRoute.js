@@ -132,10 +132,7 @@ let endpointSecret;
 // endpointSecret =
 //   "whsec_c698a89fc210e6e427793f1261baa60170ee043cc9d5d5f26ed0e4e8b6eda22b";
 
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  (req, res) => {
+router.post( "/webhook", express.raw({ type: "application/json" }),(req, res) => {
     const sig = req.headers["stripe-signature"];
 
     let data;

@@ -47,10 +47,19 @@ const Users = db.sequelize.define(
     status: {
       type: Sequelize.INTEGER,
     },
+    token: {
+      type: Sequelize.STRING,
+    },
   },
   {
     hooks: {
       beforeCreate: async (user) => {
+        if (user.password) {
+          const salt = await bcrypt.genSaltSync(10, "a");
+          user.password = bcrypt.hashSync(user.password, salt);
+        }
+      },
+      beforeUpdate: async (user) => {
         if (user.password) {
           const salt = await bcrypt.genSaltSync(10, "a");
           user.password = bcrypt.hashSync(user.password, salt);

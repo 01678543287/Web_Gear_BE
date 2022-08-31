@@ -13,6 +13,9 @@ const Product = db.sequelize.define(
     name: {
       type: Sequelize.STRING,
     },
+    name_without_unicode: {
+      type: Sequelize.STRING,
+    },
     price: {
       type: Sequelize.DECIMAL(15, 2),
     },

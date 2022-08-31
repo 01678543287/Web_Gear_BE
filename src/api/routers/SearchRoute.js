@@ -23,7 +23,7 @@ router.post("/searchProduct/:product_name", (req, res) => {
         statusCode,
         err
       );
-    console.log(result, "rs==");
+    // console.log(result, "rs==");
     return Response.Success(req, res, "success", result);
   });
 });

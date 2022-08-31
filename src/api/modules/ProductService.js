@@ -27,6 +27,9 @@ const MESSAGES = MESSAGESCONFIG.messages;
 let Service = {};
 
 Service.getAllProduct = async (params, callback) => {
+  // let str = "Có move sản phẩm tuyệt vời product"
+  // str = removeVietnameseTones(str);
+  // console.log(str,"str=0=0=0=0=0=0=0=0")
   let errProduct, resultProduct;
   [errProduct, resultProduct] = await Untils.to(
     Product.findAll({
@@ -184,6 +187,7 @@ Service.createProduct = async (params, callback) => {
 
   let dataProduct = {
     name: name,
+    name_without_unicode: Untils.removeVietnameseTones(name),
     price: price,
     content: content ? content : "",
     view: 0,
@@ -305,6 +309,7 @@ Service.editProduct = async (params, callback) => {
 
   let dataUpateProduct = {
     name: name,
+    name_without_unicode: Untils.removeVietnameseTones(name),
     price: price,
     content: content ? content : "",
     status: status ? status : 1,
@@ -381,8 +386,8 @@ Service.editProduct = async (params, callback) => {
     product_id: id,
   };
 
-  console.log(where, "where");
-  console.log(dataCatePro, "dataCatePro");
+  // console.log(where, "where");
+  // console.log(dataCatePro, "dataCatePro");
 
   let errCatePro, rsCatePro;
   [errCatePro, rsCatePro] = await Untils.to(

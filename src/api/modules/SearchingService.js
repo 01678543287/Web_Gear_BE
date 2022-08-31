@@ -17,15 +17,16 @@ const MESSAGES = MESSAGESCONFIG.messages;
 let Service = {};
 
 Service.searchProduct = async (params, callback) => {
-  console.log(params);
+  // console.log(params);
 
-  const { product_name } = params;
+  let { product_name } = params;
+  product_name = Untils.removeVietnameseTones(product_name);
   let errProduct, resultProduct;
   [errProduct, resultProduct] = await Untils.to(
     Product.findAll({
       where: {
         status: 0,
-        name: {
+        name_without_unicode: {
           [Op.iLike]: "%" + product_name + "%",
         },
       },

@@ -27,10 +27,11 @@ exports.sendMail = (to, subject, htmlContent) => {
     to: to,
     subject: subject,
     html: htmlContent,
+    replyTo: "noreply.gp_gear@gmail.com",
   };
 
-//   console.log(options, "options");
-//   console.log(transport, "transport");
+  //   console.log(options, "options");
+  //   console.log(transport, "transport");
 
   return transport.sendMail(options);
 };

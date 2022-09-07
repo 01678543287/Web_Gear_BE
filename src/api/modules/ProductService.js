@@ -70,6 +70,49 @@ Service.getAllProduct = async (params, callback) => {
   );
 };
 
+Service.getAllProductNH = async (params, callback) => {
+  // let str = "Có move sản phẩm tuyệt vời product"
+  // str = removeVietnameseTones(str);
+  // console.log(str,"str=0=0=0=0=0=0=0=0")
+  let errProduct, resultProduct;
+  [errProduct, resultProduct] = await Untils.to(
+    Product.findAll({
+      order: [["createdAt", "DESC"]],
+      raw: true,
+    })
+  );
+  if (errProduct) {
+    let result = _error(7000, errProduct);
+    return callback(7000, { data: result });
+  }
+  if (!resultProduct) {
+    let result = _error(7000, errProduct);
+    return callback(7000, { data: result });
+  }
+
+  eachLimit(
+    resultProduct,
+    1,
+    async (item) => {
+      item.image_link = Untils.linkImage + item.image_link;
+      let imageList = Untils.safeParse(item.image_list);
+      for (img of imageList) {
+        img.image_link = Untils.linkImage + img.image_link;
+      }
+      item.image_list = imageList;
+    },
+    (err, result) => {
+      if (err) {
+        result = _error(7000, err);
+        return callback(7000, { data: result });
+      }
+      result = _success(200);
+      result.products = resultProduct;
+      return callback(null, result);
+    }
+  );
+};
+
 Service.getAllProductAdmin = async (params, callback) => {
   let errProduct, resultProduct;
   [errProduct, resultProduct] = await Untils.to(

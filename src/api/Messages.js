@@ -54,6 +54,9 @@ module.exports.messages = {
 
   8300: "Create transaction failed",
 
+  8400: "Nhap hang failed",
+  8401: "Chi tiet Nhap hang failed",
+
   9998: "Upload files failed",
   9999: "Error",
 };

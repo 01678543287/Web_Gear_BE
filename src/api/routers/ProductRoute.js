@@ -26,6 +26,25 @@ router.get("/getAllProducts", (req, res) => {
   });
 });
 
+router.get("/getAllProductsNH", (req, res) => {
+  let params = req.body;
+  ServiceProduct.getAllProductNH(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
 router.get("/getAllProductsAdmin", (req, res) => {
   let params = req.body;
   ServiceProduct.getAllProductAdmin(params, (err, result) => {

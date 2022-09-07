@@ -53,6 +53,9 @@ const Admin = db.sequelize.define(
     cccd: {
       type: Sequelize.STRING,
     },
+    token: {
+      type: Sequelize.STRING,
+    },
   },
   {
     hooks: {

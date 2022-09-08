@@ -73,6 +73,19 @@ app.use(`${urlApi}/nhap_hang`, require("./src/api/routers/NhapHangRoute"));
 // app.listen(port, () => {
 //   console.log(`listening at http://localhost:${port}`);
 // });
-app.listen(process.env.PORT || 8000, function(){
-  console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
-});
+// app.listen(process.env.PORT || 8000, function(){
+//   console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
+// });
+app.set("port", process.env.PORT || 8000);
+
+app
+  .get("/", function (request, response) {
+    var result = "App is running";
+    response.send(result);
+  })
+  .listen(app.get("port"), function () {
+    console.log(
+      "App is running, server is listening on port ",
+      app.get("port")
+    );
+  });

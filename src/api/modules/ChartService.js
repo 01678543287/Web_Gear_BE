@@ -71,6 +71,11 @@ Service.exportGuest = async (params, callback) => {
       .toISOString()
       .replace(/T/, " ")
       .replace(/\..+/, "");
+      if (guest.status === 0) {
+        guest.status = "Hoạt động";
+      } else if (guest.status === 1) {
+        guest.status = "Khoá";
+      } 
   });
 
   result = _success(200);

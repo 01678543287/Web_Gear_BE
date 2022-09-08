@@ -600,4 +600,118 @@ Service.getAProductDetail = async (params, callback) => {
   return callback(null, result);
 };
 
+Service.getAProductDetail123 = async (params, callback) => {
+  if (!params) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let { id, user } = params;
+
+  if (!id) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let where = {
+    where: {
+      id: id,
+    },
+    raw: true,
+  };
+
+  let errProduct, rsProduct;
+  [errProduct, rsProduct] = await Untils.to(Product.findOne(where));
+  if (errProduct) {
+    let result = _error(500, errProduct);
+    return callback(500, { data: result });
+  }
+  if (!rsProduct) {
+    let result = _error(7000);
+    return callback(7000, { data: result });
+  }
+
+  //update view for product
+  let dataUpateP = {
+    view: parseInt(rsProduct.view) + 1,
+  };
+  let errP, rsP;
+  [errP, rsP] = await Untils.to(Product.update(dataUpateP, where));
+  if (errP) {
+    console.log("update view + 1 failed");
+  }
+
+  if (user) {
+    let dataH = {
+      product_id: id,
+      user_id: user.id,
+    };
+    let errH, rsH;
+    [errH, rsH] = await Untils.to(History.create(dataH));
+    if (errH) {
+      console.log(`Create history error: ${errH}`);
+    }
+  }
+
+  rsProduct.discount = parseFloat(rsProduct.discount);
+  rsProduct.price = parseFloat(rsProduct.price);
+  rsProduct.image_link = Untils.linkImage + rsProduct.image_link;
+  rsProduct.image_list = Untils.safeParse(rsProduct.image_list);
+  for (image of rsProduct.image_list) {
+    image.image_link = Untils.linkImage + image.image_link;
+  }
+
+  let cmt = await db.sequelize.query(
+    `SELECT U.ID as user_id,
+            U.NAME as user_name,
+            U.AVATAR as user_avatar,
+            C.*
+    FROM  COMMENT AS C INNER JOIN USERS AS U ON C.USER_ID = U.ID,
+          PRODUCTS AS P
+    WHERE U.STATUS = 1 AND P.ID = '${id}'`,
+    { type: QueryTypes.SELECT, raw: true }
+  );
+
+  rsProduct.cmt = cmt;
+
+  let findRate = {
+    where: {
+      product_id: id,
+    },
+    raw: true,
+  };
+  let errRate, rsRate;
+  [errRate, rsRate] = await Untils.to(Rate.findAll(findRate));
+  if (errRate) {
+    console.log("get rate product error: ", errRate);
+  }
+  let totalPoint = 0;
+  let count = 0;
+  rsRate.forEach((rate) => {
+    totalPoint += rate.point;
+    count++;
+  });
+
+  if (count === 0) count = 1;
+
+  rsProduct.rate = totalPoint / count;
+
+  const findCate = {
+    where: {
+      product_id: id,
+    },
+    raw: true,
+  };
+  let errC, rsC;
+  [errC, rsC] = await Untils.to(Cate_Product.findOne(findCate));
+
+  if (!errC) {
+    rsProduct.category = rsC;
+  }
+
+  let result = _success(200);
+  result.product = rsProduct;
+  return callback(null, result);
+};
+
 module.exports = Service;

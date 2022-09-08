@@ -71,16 +71,16 @@ Service.exportGuest = async (params, callback) => {
       .toISOString()
       .replace(/T/, " ")
       .replace(/\..+/, "");
-      if (guest.status === 0) {
-        guest.status = "Hoạt động";
-      } else if (guest.status === 1) {
-        guest.status = "Khoá";
-      } 
-      if (guest.gender === 0) {
-        guest.status = "Nam";
-      } else if (guest.gender === 1) {
-        guest.status = "Nữ";
-      } 
+    if (guest.status === 0) {
+      guest.status = "Hoạt động";
+    } else if (guest.status === 1) {
+      guest.status = "Khoá";
+    }
+    if (guest.gender === 0) {
+      guest.gender = "Nam";
+    } else if (guest.gender === 1) {
+      guest.gender = "Nữ";
+    }
   });
 
   result = _success(200);

@@ -76,6 +76,11 @@ Service.exportGuest = async (params, callback) => {
       } else if (guest.status === 1) {
         guest.status = "Khoá";
       } 
+      if (guest.gender === 0) {
+        guest.status = "Nam";
+      } else if (guest.gender === 1) {
+        guest.status = "Nữ";
+      } 
   });
 
   result = _success(200);

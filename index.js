@@ -70,6 +70,9 @@ app.use(`${urlApi}/chart`, require("./src/api/routers/ChartRoute"));
 //Nhap Hang
 app.use(`${urlApi}/nhap_hang`, require("./src/api/routers/NhapHangRoute"));
 
-app.listen(port, () => {
-  console.log(`listening at http://localhost:${port}`);
+// app.listen(port, () => {
+//   console.log(`listening at http://localhost:${port}`);
+// });
+app.listen(process.env.PORT || 3000, function(){
+  console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
 });

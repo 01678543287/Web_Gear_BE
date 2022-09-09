@@ -42,7 +42,7 @@ Service.searchProduct = async (params, callback) => {
   //   return callback(7000, { data: result });
   // }
 
-  if (!resultProduct) {
+  // if (!resultProduct) {
     // search by category
     let errCate, rsCate;
     [errCate, rsCate] = await Untils.to(
@@ -90,7 +90,7 @@ Service.searchProduct = async (params, callback) => {
       }
       resultProduct.push(...products);
       // end
-    }
+    // }
   }
 
   eachLimit(

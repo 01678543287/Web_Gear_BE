@@ -49,7 +49,7 @@ Service.createPromo = async (params, callback) => {
     title: title,
     code: code,
     status: status,
-    type: type,
+    type: parseInt(type),
     value_type: value_type,
   };
 

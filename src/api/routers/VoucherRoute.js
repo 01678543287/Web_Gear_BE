@@ -64,7 +64,7 @@ router.post("/sendVoucherForUser", authenticateAdminToken, (req, res) => {
   });
 });
 
-router.post("/sendVoucherForAllUsers", authenticateAdminToken, (req, res) => {
+router.post("/sendVoucherForAllUsers", /*authenticateAdminToken,*/ (req, res) => {
   let params = req.body;
   ServiceVoucher.sendVoucherForAllUsers(params, (err, result) => {
     result = result || {};

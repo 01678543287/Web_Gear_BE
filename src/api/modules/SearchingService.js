@@ -43,55 +43,57 @@ Service.searchProduct = async (params, callback) => {
   // }
 
   // if (!resultProduct) {
-    // search by category
-    let errCate, rsCate;
-    [errCate, rsCate] = await Untils.to(
-      Category.findOne({
-        where: {
-          name: {
-            [Op.iLike]: "%" + product_name + "%",
-          },
+  // search by category
+  let errCate, rsCate;
+  [errCate, rsCate] = await Untils.to(
+    Category.findOne({
+      where: {
+        name: {
+          [Op.iLike]: "%" + product_name + "%",
         },
-        raw: true,
-      })
+      },
+      raw: true,
+    })
+  );
+  if (rsCate) {
+    let err, result;
+    [err, result] = await Untils.to(
+      Cate_Product.findAll({ where: { catelog_id: rsCate.id }, raw: true })
     );
-    if (rsCate) {
-      let err, result;
-      [err, result] = await Untils.to(
-        Cate_Product.findAll({ where: { catelog_id: rsCate.id }, raw: true })
+    if (err) {
+      result = _error(2000, err);
+      return callback(2000, { data: result });
+    }
+
+    let products = [];
+
+    for (item of result) {
+      let errP, rsP;
+      [errP, rsP] = await Untils.to(
+        Product.findOne({
+          where: { id: item.product_id, status: 0 },
+          raw: true,
+        })
       );
-      if (err) {
-        result = _error(2000, err);
-        return callback(2000, { data: result });
+      if (errP) {
+        console.log(`find product error: ${errP}`);
       }
-
-      let products = [];
-
-      for (item of result) {
-        let errP, rsP;
-        [errP, rsP] = await Untils.to(
-          Product.findOne({
-            where: { id: item.product_id, status: 0 },
-            raw: true,
-          })
-        );
-        if (errP) {
-          console.log(`find product error: ${errP}`);
-        }
-        // rsP.discount = parseFloat(rsP.discount);
-        // rsP.price = parseFloat(rsP.price);
-        // rsP.image_link = Untils.linkImage + rsP.image_link;
-        // rsP.image_list = Untils.safeParse(rsP.image_list);
-        // for (image of rsP.image_list) {
-        //   image.image_link = Untils.linkImage + image.image_link;
-        // }
-        // console.log(rsP, "rsssss");
-        products.push(rsP);
-      }
-      resultProduct.push(...products);
-      // end
+      // rsP.discount = parseFloat(rsP.discount);
+      // rsP.price = parseFloat(rsP.price);
+      // rsP.image_link = Untils.linkImage + rsP.image_link;
+      // rsP.image_list = Untils.safeParse(rsP.image_list);
+      // for (image of rsP.image_list) {
+      //   image.image_link = Untils.linkImage + image.image_link;
+      // }
+      // console.log(rsP, "rsssss");
+      products.push(rsP);
+    }
+    resultProduct.push(...products);
+    // end
     // }
   }
+
+  Untils.removeDuplicate(resultProduct);
 
   eachLimit(
     resultProduct,

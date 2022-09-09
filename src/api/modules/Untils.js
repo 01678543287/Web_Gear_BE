@@ -73,6 +73,11 @@ function removeVietnameseTones(str) {
   return str;
 }
 
+let removeDuplicate = (arr) => {
+  let set = new Set(arr);
+  return [...set];
+};
+
 // const linkImage = "https://storage.googleapis.com/cloudimage123/";
 const linkImage =
   "https://res.cloudinary.com/denztyim4/image/upload/v1661151316/DOANTHUCTAP/images/";
@@ -88,4 +93,5 @@ module.exports = {
   linkImage,
   linkImageCloudinary,
   removeVietnameseTones,
+  removeDuplicate,
 };

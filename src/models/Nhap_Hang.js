@@ -16,6 +16,9 @@ const Nhap_Hang = db.sequelize.define(
     total: {
       type: Sequelize.DECIMAL(15, 2),
     },
+    nhaphang_date: {
+      type: Sequelize.DATE,
+    },
     note: {
       type: Sequelize.TEXT,
     },

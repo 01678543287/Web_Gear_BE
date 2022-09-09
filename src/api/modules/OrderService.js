@@ -690,7 +690,25 @@ Service.changeStatusOrder = async (params, callback) => {
     );
   }
 
+  // console.log(rsOrd, "ord");
+
   if (dataOrd.status === 5) {
+    for (let item of rsOrd.products) {
+      // console.log(item)
+      let errPR, rsPR;
+      [errPR, rsPR] = await Untils.to(
+        Product.findOne({ where: { id: item.product_id }, raw: true })
+      );
+      // console.log(rsPR,'pro')
+      if (rsPR) {
+        [errPR, rsPR] = await Untils.to(
+          Product.update(
+            { qty: rsPR.qty + item.qty },
+            { where: { id: item.product_id }, raw: true }
+          )
+        );
+      }
+    }
     mailer.sendMail(
       rsOrd.user_checkout.email,
       "Order Failed",
@@ -1054,6 +1072,7 @@ Service.changeStatusOrder = async (params, callback) => {
   }
 
   let result = _success(200);
+  // result.order = rsOrd;
   return callback(null, result);
 };
 

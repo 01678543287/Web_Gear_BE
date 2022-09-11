@@ -2,12 +2,13 @@ const jwt = require("jsonwebtoken");
 
 let authenticateToken = (req, res, next) => {
   // console.log(req.headers["authorization"], "headers");
+  
   const authHeader = req.headers["authorization"]
     ? req.headers["authorization"]
     : req.headers["access_token"]
     ? req.headers["access_token"]
-    : req.cookies.access_token
-    ? req.cookies.access_token
+    // : req.cookies.access_token
+    // ? req.cookies.access_token
     : req.body.access_token;
   if (!authHeader) return res.sendStatus(401);
   let token;

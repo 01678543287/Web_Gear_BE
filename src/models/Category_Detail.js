@@ -1,26 +1,23 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const db = require('../config/connectDB')
 
-const Log = db.sequelize.define('log', {
+const Category_Detail = db.sequelize.define('category_detail', {
     id: {
         type: Sequelize.UUID,
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false
     },
-    refId: {
+    brand_id: {
         type: Sequelize.CHAR(36),
     },
-    params: {
-        type: Sequelize.STRING,
-    },
-    action: {
-        type: Sequelize.CHAR(200),
+    cate_id: {
+        type: Sequelize.CHAR(36),
     }
 },
 {
-    tableName: 'log'
+    tableName: 'category_detail'
 }
 )
 
-module.exports = Log;
+module.exports = Category_Detail;

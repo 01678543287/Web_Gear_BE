@@ -2,8 +2,8 @@ const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
 const bcrypt = require("bcrypt");
 
-const Users = db.sequelize.define(
-  "users",
+const Shipper = db.sequelize.define(
+  "shipper",
   {
     id: {
       type: Sequelize.UUID,
@@ -17,11 +17,11 @@ const Users = db.sequelize.define(
     gender: {
       type: Sequelize.INTEGER,
     },
+    birthday: {
+      type: "TIMESTAMPS",
+    },
     avatar: {
       type: Sequelize.STRING,
-    },
-    age: {
-      type: Sequelize.INTEGER,
     },
     email: {
       type: Sequelize.STRING,
@@ -29,6 +29,9 @@ const Users = db.sequelize.define(
       validate: {
         isEmail: true,
       },
+    },
+    address: {
+      type: Sequelize.STRING,
     },
     password: {
       type: Sequelize.STRING,
@@ -44,29 +47,29 @@ const Users = db.sequelize.define(
     status: {
       type: Sequelize.INTEGER,
     },
+    home_town: {
+      type: Sequelize.STRING,
+    },
+    cccd: {
+      type: Sequelize.STRING,
+    },
     token: {
       type: Sequelize.STRING,
     },
   },
   {
     hooks: {
-      beforeCreate: async (user) => {
-        if (user.password) {
+      beforeCreate: async (admin) => {
+        if (admin.password) {
           const salt = await bcrypt.genSaltSync(10, "a");
-          user.password = bcrypt.hashSync(user.password, salt);
-        }
-      },
-      beforeUpdate: async (user) => {
-        if (user.password) {
-          const salt = await bcrypt.genSaltSync(10, "a");
-          user.password = bcrypt.hashSync(user.password, salt);
+          admin.password = bcrypt.hashSync(admin.password, salt);
         }
       },
     },
   },
   {
-    tableName: "users",
+    tableName: "shipper",
   }
 );
 
-module.exports = Users;
+module.exports = Shipper;

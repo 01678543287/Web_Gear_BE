@@ -8,7 +8,7 @@ const Nhap_Hang = db.sequelize.define(
       type: Sequelize.UUID,
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
-      allowNull: false,
+      allowNull: false, 
     },
     admin_id: {
       type: Sequelize.CHAR(36),

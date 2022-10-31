@@ -1,8 +1,9 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
+const bcrypt = require("bcrypt");
 
-const Transaction = db.sequelize.define(
-  "transaction",
+const Address = db.sequelize.define(
+  "address",
   {
     id: {
       type: Sequelize.UUID,
@@ -10,22 +11,18 @@ const Transaction = db.sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       allowNull: false,
     },
-    order_id: {
-      type: Sequelize.CHAR(36),
-    },
     user_id: {
       type: Sequelize.CHAR(36),
+      allowNull: false,
     },
-    amount: {
-      type: Sequelize.DECIMAL(15, 2),
-    },
-    status: {
-      type: Sequelize.INTEGER,
+    address: {
+      type: Sequelize.STRING,
+      allowNull: false,
     },
   },
   {
-    tableName: "transaction",
+    tableName: "address",
   }
 );
 
-module.exports = Transaction;
+module.exports = Address;

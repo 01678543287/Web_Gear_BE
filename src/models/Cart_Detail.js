@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
 
 const Cart_Detail = db.sequelize.define(
-  "card_detail",
+  "cart_detail",
   {
     id: {
       type: Sequelize.UUID,
@@ -10,7 +10,7 @@ const Cart_Detail = db.sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       allowNull: false,
     },
-    card_id: {
+    cart_id: {
       type: Sequelize.CHAR(36),
     },
     product_id: {
@@ -18,14 +18,10 @@ const Cart_Detail = db.sequelize.define(
     },
     qty: {
       type: Sequelize.INTEGER,
-    },
-    rate: {
-      type: Sequelize.INTEGER,
-    },
-    
+    },    
   },
   {
-    tableName: "card_detail",
+    tableName: "cart_detail",
   }
 );
 

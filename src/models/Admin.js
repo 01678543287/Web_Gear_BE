@@ -3,7 +3,7 @@ const db = require("../config/connectDB");
 const bcrypt = require("bcrypt");
 
 const Admin = db.sequelize.define(
-  "admins",
+  "admin",
   {
     id: {
       type: Sequelize.UUID,
@@ -68,7 +68,7 @@ const Admin = db.sequelize.define(
     },
   },
   {
-    tableName: "admins",
+    tableName: "admin",
   }
 );
 

@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
 
-const Transaction = db.sequelize.define(
-  "transaction",
+const Order_Detail = db.sequelize.define(
+  "order_detail",
   {
     id: {
       type: Sequelize.UUID,
@@ -13,19 +13,19 @@ const Transaction = db.sequelize.define(
     order_id: {
       type: Sequelize.CHAR(36),
     },
-    user_id: {
+    product_id: {
       type: Sequelize.CHAR(36),
     },
-    amount: {
-      type: Sequelize.DECIMAL(15, 2),
-    },
-    status: {
+    qty: {
       type: Sequelize.INTEGER,
     },
+    rate: {
+      type: Sequelize.INTEGER,
+    },        
   },
   {
-    tableName: "transaction",
+    tableName: "order_detail",
   }
 );
 
-module.exports = Transaction;
+module.exports = Order_Detail;

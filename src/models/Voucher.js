@@ -11,7 +11,7 @@ const Voucher = db.sequelize.define('voucher', {
     user_id: {
         type: Sequelize.CHAR(36),
     },
-    promoes_id: {
+    promo_id: {
         type: Sequelize.CHAR(36),
     },
     is_active: {

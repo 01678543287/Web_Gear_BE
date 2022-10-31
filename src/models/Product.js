@@ -16,12 +16,6 @@ const Product = db.sequelize.define(
     name_without_unicode: {
       type: Sequelize.STRING,
     },
-    price: {
-      type: Sequelize.DECIMAL(15, 2),
-    },
-    discount: {
-      type: Sequelize.DECIMAL(15, 2),
-    },
     content: {
       type: Sequelize.TEXT,
     },
@@ -30,7 +24,6 @@ const Product = db.sequelize.define(
     },
     image_list: {
       type: Sequelize.TEXT,
-      comment: "json",
     },
     view: {
       type: Sequelize.INTEGER,
@@ -44,7 +37,10 @@ const Product = db.sequelize.define(
     status: {
       type: Sequelize.INTEGER,
     },
-    warehouse_id: {
+    cate_id: {
+      type: Sequelize.CHAR(36),
+    },
+    brand_id: {
       type: Sequelize.CHAR(36),
     },
   },

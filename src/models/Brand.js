@@ -1,8 +1,9 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
+const bcrypt = require("bcrypt");
 
-const Ribbon = db.sequelize.define(
-  "ribbon",
+const Brand = db.sequelize.define(
+  "brand",
   {
     id: {
       type: Sequelize.UUID,
@@ -11,18 +12,17 @@ const Ribbon = db.sequelize.define(
       allowNull: false,
     },
     name: {
-      type: Sequelize.TEXT,
+      type: Sequelize.STRING,
+      allowNull: false,
     },
-    active: {
-      type: Sequelize.INTEGER,
-    },
-    priority: {
-      type: Sequelize.INTEGER,
+    logo: {
+      type: Sequelize.STRING,
+      allowNull: false,
     },
   },
   {
-    tableName: "ribbon",
+    tableName: "brand",
   }
 );
 
-module.exports = Ribbon;
+module.exports = Brand;

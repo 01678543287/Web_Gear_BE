@@ -5,7 +5,7 @@ const Chi_Tiet_Nhap_Hang = db.sequelize.define(
   "chi_tiet_nhap_hang",
   {
     id: {
-      type: Sequelize.UUID,
+      type: Sequelize.UUID, 
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
       allowNull: false,

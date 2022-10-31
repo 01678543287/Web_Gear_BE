@@ -39,7 +39,7 @@ const { Sequelize } = require("sequelize");
 
 const sequelize = new Sequelize({
     //database: "gpgear",
-    database: "abc",
+    database: "BB_LUAN_AN_V2",
     username: "postgres",
     password: "123",
     host: "localhost",

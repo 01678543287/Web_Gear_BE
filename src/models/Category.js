@@ -11,9 +11,6 @@ const Category = db.sequelize.define('category', {
     name: {
         type: Sequelize.STRING,
     },
-    parent_id: {
-        type: Sequelize.CHAR(36),
-    }
 },
 {
     tableName: 'category'

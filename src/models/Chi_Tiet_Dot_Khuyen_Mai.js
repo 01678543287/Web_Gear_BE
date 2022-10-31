@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
 
-const History = db.sequelize.define(
-  "history",
+const Chi_Tiet_Dot_Khuyen_Mai = db.sequelize.define(
+  "chi_tiet_dot_khuyen_mai",
   {
     id: {
       type: Sequelize.UUID,
@@ -10,16 +10,19 @@ const History = db.sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       allowNull: false,
     },
-    user_id: {
+    dotkhuyenmai_id: {
       type: Sequelize.CHAR(36),
     },
     product_id: {
       type: Sequelize.CHAR(36),
     },
+    value: {
+      type: Sequelize.INTEGER,
+    },
   },
   {
-    tableName: "history",
+    tableName: "chi_tiet_dot_khuyen_mai",
   }
 );
 
-module.exports = History;
+module.exports = Chi_Tiet_Dot_Khuyen_Mai;

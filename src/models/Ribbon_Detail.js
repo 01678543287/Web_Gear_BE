@@ -1,23 +1,22 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const db = require('../config/connectDB')
 
-const Cate_Product = db.sequelize.define('cate_product', {
+const Ribbon_Detail = db.sequelize.define('ribbon_detail', {
     id: {
         type: Sequelize.UUID,
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false
     },
-    catelog_id: {
+    ribbon_id: {
         type: Sequelize.CHAR(36),
     },
     product_id: {
         type: Sequelize.CHAR(36),
-    }
-},
-{
-    tableName: 'cate_product'
+    },
+}, {
+    tableName: 'ribbon_detail'
 }
 )
 
-module.exports = Cate_Product;
+module.exports = Ribbon_Detail;

@@ -22,7 +22,6 @@ const Promoes = db.sequelize.define('promoes', {
     },
     value_type: {
         type: Sequelize.STRING,
-        comment: 'json'
     }
 },
 {

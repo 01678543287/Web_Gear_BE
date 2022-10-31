@@ -25,14 +25,11 @@ const Order = db.sequelize.define(
     admin_id: {
       type: Sequelize.CHAR(36),
     },
-    card_id: {
+    shipper_id: {
       type: Sequelize.CHAR(36),
     },
     status: {
       type: Sequelize.INTEGER,
-    },
-    products: {
-      type: Sequelize.TEXT,
     },
     user_checkout: {
       type: Sequelize.TEXT,

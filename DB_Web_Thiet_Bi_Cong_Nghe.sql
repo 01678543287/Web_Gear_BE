@@ -6,10 +6,12 @@ CREATE TABLE "category" (
   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
 );
 
-CREATE TABLE "products" (
+
+
+CREATE TABLE "products" ( 
   "id" varchar(36) PRIMARY KEY,
   "name" varchar NOT NULL,
-"name_without_unicode" varchar NOT NULL,
+  "name_without_unicode" varchar NOT NULL,
   "price" bigint NOT NULL,
   "discount" bigint NOT NULL,
   "content" text,
@@ -42,7 +44,7 @@ CREATE TABLE "warehouse" (
 CREATE TABLE "users" (
   "id" varchar(36) PRIMARY KEY,
   "name" varchar NOT NULL,
-"avatar" varchar NOT NULL,
+  "avatar" varchar NOT NULL,
   "age" int NOT NULL,
   "email" varchar NOT NULL,
   "address" varchar NOT NULL,

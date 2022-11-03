@@ -78,27 +78,38 @@ CREATE TABLE "address" (
 );
 
 CREATE TABLE "rate" (
-  "user_id" varchar(36) NOT NULL,
+  "id" varchar(36) NOT NULL,
   "product_id" varchar(36) NOT NULL,
-  "point" int NOT NULL DEFAULT 0,
-  "comment" varchar NOT NULL,
+  "order_id" varchar(36) NOT NULL,
+  "point" int NOT NULL DEFAULt 5,
+  "comment" varchar,
   "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
 );
 
-CREATE TABLE "cart" (
-  "id" varchar(36) PRIMARY KEY,
-  "user_id" varchar(36) NOT NULL,
-  "status" int NOT NULL DEFAULT 0,
-  "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
-  "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
-);
+-- CREATE TABLE "cart" (
+--   "id" varchar(36) PRIMARY KEY,
+--   "user_id" varchar(36) NOT NULL,
+--   "status" int NOT NULL DEFAULT 0,
+--   "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
+--   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
+-- );
 
+-- CREATE TABLE "cart_detail" (
+--   "id" varchar(36) NOT NULL,
+--   "cart_id" varchar(36) NOT NULL,
+--   "product_id" varchar(36) NOT NULL,
+--   "qty" int NOT NULL DEFAULT 1,
+--   "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
+--   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
+-- );
 CREATE TABLE "cart_detail" (
   "id" varchar(36) NOT NULL,
-  "cart_id" varchar(36) PRIMARY KEY,
+  "user_id" varchar(36) NOT NULL,
   "product_id" varchar(36) NOT NULL,
+  "price" int NOT NULL,
   "qty" int NOT NULL DEFAULT 1,
+  "status" int NOT NULL DEFAULT 0,
   "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
 );
@@ -142,7 +153,7 @@ CREATE TABLE "shipper" (
 CREATE TABLE "order" (
 "id" varchar(36) PRIMARY KEY,
 "user_id" varchar(36) NOT NULL,
-"total" int NOT NULL DEFAULT 0,
+-- "total" int NOT NULL DEFAULT 0,
 "discount" int NOT NULL DEFAULT 0,
 "order_date" date NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
 "admin_id" varchar(36) NOT NULL,
@@ -157,12 +168,22 @@ CREATE TABLE "order_detail" (
   "id" varchar(36) NOT NULL,
   "order_id" varchar(36) NOT NULL,
   "product_id" varchar(36) NOT NULL,
+  "price" int NOT NULL,
   "qty" int NOT NULL DEFAULT 1,
-  "rate" int NOT NULL DEFAULT 0,
-  "comment" varchar NOT NULL DEFAULT '',
+  -- "status" int NOT NULL DEFAULT 0,
+  -- "comment" varchar NOT NULL DEFAULT '',
+  -- "rate" int NOT NULL DEFAULT 0,
   "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
 );
+
+-- CREATE TABLE "phieu_tra" (
+-- "id" varchar(36) PRIMARY KEY,
+-- "user_id" varchar(36) NOT NULL,
+-- "address_receive" varchar NOT NULL,
+-- "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
+-- "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
+-- );
 
 CREATE TABLE "transaction" (
   "id" varchar(36) NOT NULL,
@@ -245,6 +266,15 @@ CREATE TABLE "chi_tiet_dot_khuyen_mai" (
   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
 );
 
+CREATE TABLE "tra_hang" (
+  "id" varchar(36) NOT NULL,
+  "product_id" varchar(36) NOT NULL,
+  "order_id" varchar(36) NOT NULL,
+  "qty" int NOT NULL DEFAULT 1,
+  "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
+  "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
+);
+
 ALTER TABLE "category_detail" ADD FOREIGN KEY ("brand_id") REFERENCES "brand" ("id");
 ALTER TABLE "category_detail" ADD FOREIGN KEY ("cate_id") REFERENCES "category" ("id");
 
@@ -256,12 +286,12 @@ ALTER TABLE "ribbon_detail" ADD FOREIGN KEY ("product_id") REFERENCES "products"
 
 ALTER TABLE "address" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
-ALTER TABLE "rate" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "rate" ADD FOREIGN KEY ("order_id") REFERENCES "order" ("id");
 ALTER TABLE "rate" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 
-ALTER TABLE "cart" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+-- ALTER TABLE "cart" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
-ALTER TABLE "cart_detail" ADD FOREIGN KEY ("cart_id") REFERENCES "cart" ("id");
+ALTER TABLE "cart_detail" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "cart_detail" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 
 ALTER TABLE "order" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
@@ -290,28 +320,5 @@ ALTER TABLE "dot_khuyen_mai" ADD FOREIGN KEY ("admin_id") REFERENCES "admin" ("i
 ALTER TABLE "chi_tiet_dot_khuyen_mai" ADD FOREIGN KEY ("dotkhuyenmai_id") REFERENCES "dot_khuyen_mai" ("id");
 ALTER TABLE "chi_tiet_dot_khuyen_mai" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ALTER TABLE "tra_hang" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
+ALTER TABLE "tra_hang" ADD FOREIGN KEY ("order_id") REFERENCES "order" ("id");

@@ -40,7 +40,7 @@ Service.createUser = async (params, callback) => {
     }
   }
 
-  const avatarImg = rsUpload ? rsUpload : null;
+  const avatarImg = rsUpload ? rsUpload : '';
 
   let dataUser = {
     name: name,

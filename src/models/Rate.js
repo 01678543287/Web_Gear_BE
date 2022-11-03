@@ -8,7 +8,7 @@ const Rate = db.sequelize.define('rate', {
         defaultValue: DataTypes.UUIDV4,
         allowNull: false
     },
-    user_id: {
+    order_id: {
         type: Sequelize.CHAR(36),
     },
     product_id: {

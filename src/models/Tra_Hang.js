@@ -1,34 +1,28 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const db = require("../config/connectDB");
 
-const Cart_Detail = db.sequelize.define(
-  "cart_detail",
+const Tra_Hang = db.sequelize.define(
+  "tra_hang",
   {
     id: {
       type: Sequelize.UUID,
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
-      allowNull: false,
-    },
-    user_id: {
-      type: Sequelize.CHAR(36),
+      allowNull: false, 
     },
     product_id: {
       type: Sequelize.CHAR(36),
     },
+    order_id: {
+      type: Sequelize.DECIMAL(15, 2),
+    },
     qty: {
-      type: Sequelize.INTEGER,
-    },
-    price: {
-      type: Sequelize.INTEGER,
-    },
-    status: {
       type: Sequelize.INTEGER,
     },
   },
   {
-    tableName: "cart_detail",
+    tableName: "tra_hang",
   }
 );
 
-module.exports = Cart_Detail;
+module.exports = Tra_Hang;

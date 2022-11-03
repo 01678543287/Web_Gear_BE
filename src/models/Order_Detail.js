@@ -19,9 +19,12 @@ const Order_Detail = db.sequelize.define(
     qty: {
       type: Sequelize.INTEGER,
     },
+    price: {
+      type: Sequelize.INTEGER,
+    },
     rate: {
       type: Sequelize.INTEGER,
-    },        
+    },
   },
   {
     tableName: "order_detail",

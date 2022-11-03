@@ -6,6 +6,8 @@ const Response = require("../Response");
 const router = express.Router();
 
 router.get("/getAll", (req, res) => {
+  
+  // console.log("ok");return;
   let params = req.body;
   ServiceCategory.getAllCategory(params, (err, result) => {
     result = result || {};
@@ -24,44 +26,44 @@ router.get("/getAll", (req, res) => {
   });
 });
 
-router.post("/getCategory", (req, res) => {
-  let params = req.body;
-  ServiceCategory.getCategory(params, (err, result) => {
-    result = result || {};
-    let { errorCode, message, data, statusCode } = result;
-    if (err)
-      return Response.Error(
-        req,
-        res,
-        errorCode,
-        message,
-        data,
-        statusCode,
-        err
-      );
-    return Response.Success(req, res, "success", result);
-  });
-});
+// router.post("/getCategory", (req, res) => {
+//   let params = req.body;
+//   ServiceCategory.getCategory(params, (err, result) => {
+//     result = result || {};
+//     let { errorCode, message, data, statusCode } = result;
+//     if (err)
+//       return Response.Error(
+//         req,
+//         res,
+//         errorCode,
+//         message,
+//         data,
+//         statusCode,
+//         err
+//       );
+//     return Response.Success(req, res, "success", result);
+//   });
+// });
 
-router.get("/getProductsByCate/:cate_id", (req, res) => {
-  let params = req.body;
-  params.cate_id = req.params.cate_id;
-  ServiceCategory.getProductsByCate(params, (err, result) => {
-    result = result || {};
-    let { errorCode, message, data, statusCode } = result;
-    if (err)
-      return Response.Error(
-        req,
-        res,
-        errorCode,
-        message,
-        data,
-        statusCode,
-        err
-      );
-    return Response.Success(req, res, "success", result);
-  });
-});
+// router.get("/getProductsByCate/:cate_id", (req, res) => {
+//   let params = req.body;
+//   params.cate_id = req.params.cate_id;
+//   ServiceCategory.getProductsByCate(params, (err, result) => {
+//     result = result || {};
+//     let { errorCode, message, data, statusCode } = result;
+//     if (err)
+//       return Response.Error(
+//         req,
+//         res,
+//         errorCode,
+//         message,
+//         data,
+//         statusCode,
+//         err
+//       );
+//     return Response.Success(req, res, "success", result);
+//   });
+// });
 
 router.post("/create",/* authenticateAdminToken,*/ (req, res) => {
   let params = req.body;
@@ -82,42 +84,42 @@ router.post("/create",/* authenticateAdminToken,*/ (req, res) => {
   });
 });
 
-router.put("/edit", authenticateAdminToken, (req, res) => {
-  let params = req.body;
-  ServiceCategory.editCategory(params, (err, result) => {
-    result = result || {};
-    let { errorCode, message, data, statusCode } = result;
-    if (err)
-      return Response.Error(
-        req,
-        res,
-        errorCode,
-        message,
-        data,
-        statusCode,
-        err
-      );
-    return Response.Success(req, res, "success", result);
-  });
-});
+// router.put("/edit", authenticateAdminToken, (req, res) => {
+//   let params = req.body;
+//   ServiceCategory.editCategory(params, (err, result) => {
+//     result = result || {};
+//     let { errorCode, message, data, statusCode } = result;
+//     if (err)
+//       return Response.Error(
+//         req,
+//         res,
+//         errorCode,
+//         message,
+//         data,
+//         statusCode,
+//         err
+//       );
+//     return Response.Success(req, res, "success", result);
+//   });
+// });
 
-router.delete("/delete", authenticateAdminToken, (req, res) => {
-  let params = req.body;
-  ServiceCategory.deleteCategory(params, (err, result) => {
-    result = result || {};
-    let { errorCode, message, data, statusCode } = result;
-    if (err)
-      return Response.Error(
-        req,
-        res,
-        errorCode,
-        message,
-        data,
-        statusCode,
-        err
-      );
-    return Response.Success(req, res, "success", result);
-  });
-});
+// router.delete("/delete", authenticateAdminToken, (req, res) => {
+//   let params = req.body;
+//   ServiceCategory.deleteCategory(params, (err, result) => {
+//     result = result || {};
+//     let { errorCode, message, data, statusCode } = result;
+//     if (err)
+//       return Response.Error(
+//         req,
+//         res,
+//         errorCode,
+//         message,
+//         data,
+//         statusCode,
+//         err
+//       );
+//     return Response.Success(req, res, "success", result);
+//   });
+// });
 
 module.exports = router;

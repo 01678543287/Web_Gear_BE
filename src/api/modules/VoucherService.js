@@ -6,7 +6,7 @@ const Promo = require("../../models/Promoes");
 const Voucher = require("../../models/Voucher");
 const User = require("../../models/Users");
 
-const Untils = require("../modules/Untils");
+const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
@@ -55,7 +55,7 @@ Service.useVoucher = async (params, callback) => {
   let checkVoucher = {
     where: {
       user_id: user.id,
-      promoes_id: rsPromo.id,
+      promo_id: rsPromo.id,
       is_active: 0,
     },
     raw: true,
@@ -129,10 +129,12 @@ Service.getVoucherForUser = async (params, callback) => {
     return callback(4001, { data: result });
   }
 
+  // console.log(rsV,'rsV')
+
   for (vou of rsV) {
     let errPromo, rsPromo;
     [errPromo, rsPromo] = await Untils.to(
-      Promo.findOne({ where: { id: vou.promoes_id, status: 0 }, raw: true })
+      Promo.findOne({ where: { id: vou.promo_id, status: 0 }, raw: true })
     );
     if (errPromo) {
       let result = _error(4001, errPromo);
@@ -204,7 +206,7 @@ Service.sendVoucherForUser = async (params, callback) => {
 
   let checkExistVoucher = {
     where: {
-      promoes_id: promo_id,
+      promo_id: promo_id,
       user_id: user_id,
     },
     raw: true,
@@ -223,7 +225,7 @@ Service.sendVoucherForUser = async (params, callback) => {
 
   let dataVoucher = {
     user_id: user_id,
-    promoes_id: promo_id,
+    promo_id: promo_id,
   };
 
   let errVoucher, rsVoucher;
@@ -289,7 +291,7 @@ Service.sendVoucherForAllUsers = async (params, callback) => {
   let sendVoucher = async (user) => {
     let checkExistVoucher = {
       where: {
-        promoes_id: promo_id,
+        promo_id: promo_id,
         user_id: user.id,
       },
       raw: true,
@@ -306,7 +308,7 @@ Service.sendVoucherForAllUsers = async (params, callback) => {
     } else if (!rsV) {
       let dataVoucher = {
         user_id: user.id,
-        promoes_id: promo_id,
+        promo_id: promo_id,
       };
 
       let errVoucher, rsVoucher;

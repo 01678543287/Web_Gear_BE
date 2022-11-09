@@ -6,11 +6,11 @@ const db = require("../../config/connectDB");
 const Promo = require("../../models/Promoes");
 const Voucher = require("../../models/Voucher");
 const User = require("../../models/Users");
-const Cart = require("../../models/Cart");
+// const Cart = require("../../models/Cart");
 const Product = require("../../models/Product");
 const Cart_Detail = require("../../models/Cart_Detail");
 
-const Untils = require("../modules/Untils");
+const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
@@ -19,12 +19,14 @@ const MESSAGES = MESSAGESCONFIG.messages;
 let Service = {};
 
 Service.addToCart = async (params, callback) => {
+  console.log(params);
+  // return;
   if (!params) {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
 
-  let { product_id, user, type } = params;
+  let { product_id, user, type, qty, currentQty } = params;
 
   if (!product_id) {
     let result = _error(1000);
@@ -50,10 +52,18 @@ Service.addToCart = async (params, callback) => {
     return callback(7000, { data: result });
   }
 
+  if (type === 0) {
+    rsProduct.qty += 1;
+  } else if (type === 1) {
+    rsProduct.qty -= 1;
+  } else if (type === 2) {
+    rsProduct.qty += currentQty - qty;
+  }
+
   let erP, rsP;
   [erP, rsP] = await Untils.to(
     Product.update(
-      { qty: type === 1 ? rsProduct.qty - 1 : rsProduct.qty + 1 },
+      { qty: rsProduct.qty },
       {
         where: {
           id: rsProduct.id,
@@ -68,41 +78,12 @@ Service.addToCart = async (params, callback) => {
   }
 
   if (user) {
-    let checkExistCart = {
-      where: {
-        user_id: user.id,
-        status: 0,
-      },
-      raw: true,
-    };
-    let errCC, checkCart;
-    [errCC, checkCart] = await Untils.to(Cart.findOne(checkExistCart));
-    if (errCC) {
-      let result = _error(8102, errCC);
-      return callback(8102, { data: result });
-    }
-    let cart;
-    if (!checkCart) {
-      // create cart
-      let dataCart = {
-        user_id: user.id,
-      };
-      let errCart, rsCart;
-      [errCart, rsCart] = await Untils.to(Cart.create(dataCart));
-      if (errCart) {
-        let result = _error(8100, errCart);
-        return callback(8100, { data: result });
-      }
-      cart = rsCart.dataValues;
-    } else {
-      cart = checkCart;
-    }
-
     //check exist product in cart_detail
     let checkExistProductInCartDetail = {
       where: {
-        card_id: cart.id,
+        user_id: user.id,
         product_id: product_id,
+        status: 0,
       },
       raw: true,
     };
@@ -115,8 +96,16 @@ Service.addToCart = async (params, callback) => {
       return callback(8101, { data: result });
     }
     if (rsCECD) {
+      if (type === 0) {
+        rsCECD.qty -= 1;
+      } else if (type === 1) {
+        rsCECD.qty += 1;
+      } else if (type === 2) {
+        rsCECD.qty = qty;
+      }
+
       let dataU = {
-        qty: type === 1 ? parseInt(rsCECD.qty) + 1 : parseInt(rsCECD.qty) - 1,
+        qty: rsCECD.qty,
       };
       let where = {
         where: {
@@ -128,8 +117,9 @@ Service.addToCart = async (params, callback) => {
     } else {
       // create cart_detail
       let dataCartDetail = {
-        card_id: cart.id,
+        user_id: user.id,
         product_id: product_id,
+        price: rsProduct.price,
         qty: 1,
         rate: 0,
       };
@@ -145,36 +135,16 @@ Service.addToCart = async (params, callback) => {
   } else {
     // set session || cookie
   }
-  // let cart = {};
-  // let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, d.qty, p.price * d.qty - p.discount as total
-  // FROM (SELECT cd.product_id , cd.qty
-  //       FROM card as c INNER JOIN card_detail as cd ON c.id = cd.card_id
-  //       WHERE c.user_id = '${user.id}'
-  //         AND c.status = 0
-  //      ) as d INNER JOIN products as p ON d.product_id = p.id
-  // WHERE p.status = 0 AND p.qty > 0 `;
-  // let cartQuery = await db.sequelize.query(queryProductCart, {
-  //   type: QueryTypes.SELECT,
-  //   raw: true,
-  // });
-  // cart.totalPrice = 0;
-  // for (const product of cartQuery) {
-  //   product.image_link = Untils.linkImage + product.image_link;
-  //   product.price = parseInt(product.price);
-  //   product.total = parseInt(product.total);
-  //   cart.totalPrice += product.total;
-  // }
-  // cart.products = cartQuery;
 
   let cart = {};
-  let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, p.qty as qty_product, d.qty, p.price * d.qty - p.discount as total
-                            FROM (SELECT cd.product_id , cd.qty
-                                  FROM card as c INNER JOIN card_detail as cd ON c.id = cd.card_id
-                                  WHERE c.user_id = '${user.id}'
-                                    AND c.status = 0
-                                  ORDER BY cd."createdAt" DESC
-                                ) as d INNER JOIN products as p ON d.product_id = p.id
-                            WHERE p.status = 0 `;
+  let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, p.qty as qty_product, d.qty, p.price * d.qty as total
+  FROM (SELECT cd.product_id , cd.qty
+        FROM  cart_detail as cd
+        WHERE cd.user_id = 'baed8929-d408-4dc4-a86d-bb1f248df930'
+          AND cd.status = 0
+        ORDER BY cd."createdAt" DESC
+      ) as d INNER JOIN products as p ON d.product_id = p.id
+  WHERE p.status = 0 `;
   let cartQuery = await db.sequelize.query(queryProductCart, {
     type: QueryTypes.SELECT,
     raw: true,
@@ -204,14 +174,14 @@ Service.getCartForUser = async (params, callback) => {
 
   if (user && !cart) {
     let cart = {};
-    let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, p.qty as qty_product, d.qty, p.price * d.qty - p.discount as total
-                            FROM (SELECT cd.product_id , cd.qty
-                                  FROM card as c INNER JOIN card_detail as cd ON c.id = cd.card_id
-                                  WHERE c.user_id = '${user.id}'
-                                    AND c.status = 0
-                                  ORDER BY cd."createdAt" DESC
-                                ) as d INNER JOIN products as p ON d.product_id = p.id
-                            WHERE p.status = 0`;
+    let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, p.qty as qty_product, d.qty, p.price * d.qty as total
+    FROM (SELECT cd.product_id , cd.qty
+          FROM  cart_detail as cd
+          WHERE cd.user_id = '${user.id}'
+            AND cd.status = 0
+          ORDER BY cd."createdAt" DESC
+        ) as d INNER JOIN products as p ON d.product_id = p.id
+    WHERE p.status = 0 `;
     let cartQuery = await db.sequelize.query(queryProductCart, {
       type: QueryTypes.SELECT,
       raw: true,
@@ -254,32 +224,31 @@ Service.deleteProductForCart = async (params, callback) => {
     return callback(1000, result);
   }
 
-  const findCart = {
-    where: {
-      user_id: user.id,
-      status: 0,
-    },
-    raw: true,
-  };
+  // const findCart = {
+  //   where: {
+  //     user_id: user.id,
+  //     status: 0,
+  //   },
+  //   raw: true,
+  // };
 
-  let errC, rsC;
-  [errC, rsC] = await Untils.to(Cart.findOne(findCart));
+  // let errC, rsC;
+  // [errC, rsC] = await Untils.to(Cart.findOne(findCart));
 
-  if (errC) {
-    const result = _error(8103, errC);
-    return callback(8103, result);
-  }
-  if (!rsC) {
-    const result = _error(8103);
-    return callback(8103, result);
-  }
+  // if (errC) {
+  //   const result = _error(8103, errC);
+  //   return callback(8103, result);
+  // }
+  // if (!rsC) {
+  //   const result = _error(8103);
+  //   return callback(8103, result);
+  // }
 
-  let errDP, rsDP;
-  [errDP, rsDP] = await Untils.to(
+  let [errDP, rsDP] = await Untils.to(
     Cart_Detail.findOne({
       where: {
         product_id: product_id,
-        card_id: rsC.id,
+        user_id: user.id,
       },
       raw: true,
     })
@@ -314,20 +283,20 @@ Service.deleteProductForCart = async (params, callback) => {
     Cart_Detail.destroy({
       where: {
         product_id: product_id,
-        card_id: rsC.id,
+        user_id: user.id,
       },
     })
   );
 
   let cart = {};
-  let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, d.qty, p.price * d.qty - p.discount as total
-                            FROM (SELECT cd.product_id , cd.qty
-                                  FROM card as c INNER JOIN card_detail as cd ON c.id = cd.card_id
-                                  WHERE c.user_id = '${user.id}'
-                                    AND c.status = 0
-                                  ORDER BY cd."createdAt" DESC
-                                ) as d INNER JOIN products as p ON d.product_id = p.id
-                            WHERE p.status = 0 AND p.qty > 0 
+  let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, p.qty as qty_product, d.qty, p.price * d.qty as total
+  FROM (SELECT cd.product_id , cd.qty
+        FROM  cart_detail as cd
+        WHERE cd.user_id = 'baed8929-d408-4dc4-a86d-bb1f248df930'
+          AND cd.status = 0
+        ORDER BY cd."createdAt" DESC
+      ) as d INNER JOIN products as p ON d.product_id = p.id
+  WHERE p.status = 0 AND p.qty > 0 
                             `;
   let cartQuery = await db.sequelize.query(queryProductCart, {
     type: QueryTypes.SELECT,

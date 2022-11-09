@@ -9,7 +9,7 @@ const Chi_Tiet_Nhap_Hang = require("../../models/Chi_Tiet_Nhap_Hang");
 const Product = require("../../models/Product");
 // const Cart_Detail = require("../../models/Cart_Detail");
 
-const Untils = require("./Untils");
+const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");

@@ -46,14 +46,14 @@ const sequelize = new Sequelize({
     port: 5432,
     dialect: "postgres",
     define: {
-        timestamps: false
+        timestamps: true
     },
     // dialectOptions: {
-    //     // timezone: '+07:00',
-    //     ssl: {
-    //         require: true, // This will help you. But you will see nwe error
-    //         rejectUnauthorized: false // This line will fix new error
-    //     }
+    //     timezone: '+07:00',
+    //     // ssl: {
+    //     //     require: true, // This will help you. But you will see nwe error
+    //     //     rejectUnauthorized: false // This line will fix new error
+    //     // }
     // },
 });
 

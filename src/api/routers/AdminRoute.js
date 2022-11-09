@@ -6,7 +6,7 @@ const router = express.Router();
 const { multer } = require("../upload/UploadFileCloud");
 
 const cpUpload = multer.fields([{ name: "avatar", maxCount: 1 }]);
-router.post("/signUpAdmin", cpUpload, /*authenticateAdminToken,*/ (req, res) => {
+router.post("/signUpAdmin", cpUpload, authenticateAdminToken, (req, res) => {
   let params = req.body;
   // params.avatar = req.files["avatar"] ? req.files["avatar"][0] : "";
   AdminService.createAdmin(params, (err, result) => {

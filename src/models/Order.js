@@ -34,6 +34,9 @@ const Order = db.sequelize.define(
     user_checkout: {
       type: Sequelize.TEXT,
     },
+    payment_intent: {
+      type: Sequelize.CHAR(36),
+    },
   },
   {
     tableName: "order",

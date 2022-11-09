@@ -17,7 +17,7 @@ let authenticateToken = (req, res, next) => {
   } else {
     token = authHeader;
   }
-  console.log(token, "token");
+  // console.log(token, "token");
 
   if (!token) return res.sendStatus(401);
 

@@ -23,7 +23,7 @@ const Thay_Doi_Gia = db.sequelize.define(
       type: "TIMESTAMPS",
     },
     price: {
-      type: Sequelize.INTEGER,
+      type: Sequelize.DECIMAL(15, 2),
     },
     active: {
       type: Sequelize.INTEGER,

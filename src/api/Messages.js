@@ -51,11 +51,14 @@ module.exports.messages = {
 
   8200: "Create order failed",
   8201: "Order not found",
+  8202: "Update order failed",
 
   8300: "Create transaction failed",
 
   8400: "Nhap hang failed",
   8401: "Chi tiet Nhap hang failed",
+
+  8500: "Tra hang failed",
 
   9998: "Upload files failed",
   9999: "Error",

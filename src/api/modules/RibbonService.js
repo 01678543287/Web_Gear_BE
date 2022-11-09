@@ -3,9 +3,9 @@ const { eachLimit } = require("async");
 
 const db = require("../../config/connectDB");
 const Ribbon = require("../../models/Ribbon");
-const Ribbon_Product = require("../../models/Ribbon_Product");
+const Ribbon_Detail = require("../../models/Ribbon_Detail");
 
-const Untils = require("../modules/Untils");
+const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
@@ -34,7 +34,7 @@ Service.getRibbon = async (params, callback) => {
   for (rib of rsRibbon) {
     let errRibbonDetail, ribDetail;
     [errRibbonDetail, ribDetail] = await Untils.to(
-      Ribbon_Product.findAll({ where: { ribbon_id: rib.id }, raw: true })
+      Ribbon_Detail.findAll({ where: { ribbon_id: rib.id }, raw: true })
     );
     if (errRibbonDetail) {
       let result = _error(404, errRibbonDetail);

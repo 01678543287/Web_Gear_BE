@@ -5,7 +5,7 @@ const db = require("../../config/connectDB");
 const Promo = require("../../models/Promoes");
 const Voucher = require("../../models/Voucher");
 
-const Untils = require("../modules/Untils");
+const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");

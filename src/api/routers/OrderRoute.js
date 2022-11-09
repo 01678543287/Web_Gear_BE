@@ -25,7 +25,8 @@ router.get("/getOrdersForUser", authenticateToken, (req, res) => {
   });
 });
 
-router.get("/getOrderDetailForUser/:order_id",
+router.get(
+  "/getOrderDetailForUser/:order_id",
   authenticateToken,
   (req, res) => {
     let params = req.body;
@@ -116,9 +117,27 @@ router.post("/changeStatusOrder", authenticateToken, (req, res) => {
 router.post("/setRateOrderDetail", authenticateToken, (req, res) => {
   let params = req.body;
   params.user = req.user;
-  // console.log(params, "pr=0=0");
-  // return;
   ServiceOrder.setRate(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.post("/cancel", authenticateToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  ServiceOrder.cancel(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)

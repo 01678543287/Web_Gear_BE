@@ -4,9 +4,10 @@ const { eachLimit, forEach } = require("async");
 const db = require("../../config/connectDB");
 const Product = require("../../models/Product");
 const Category = require("../../models/Category");
-const Cate_Product = require("../../models/Cate_Product");
+const Category_Detail = require("../../models/Category_Detail");
+const Brand = require("../../models/Brand");
 
-const Untils = require("../modules/Untils");
+const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
@@ -17,12 +18,10 @@ const MESSAGES = MESSAGESCONFIG.messages;
 let Service = {};
 
 Service.searchProduct = async (params, callback) => {
-  // console.log(params);
-
   let { product_name } = params;
+
   product_name = Untils.removeVietnameseTones(product_name);
-  let errProduct, resultProduct;
-  [errProduct, resultProduct] = await Untils.to(
+  let [errProduct, resultProduct] = await Untils.to(
     Product.findAll({
       where: {
         status: 0,
@@ -33,63 +32,52 @@ Service.searchProduct = async (params, callback) => {
       raw: true,
     })
   );
+
   if (errProduct) {
     let result = _error(7000, errProduct);
     return callback(7000, { data: result });
   }
-  // if (!resultProduct) {
-  //   let result = _error(7000, errProduct);
-  //   return callback(7000, { data: result });
-  // }
 
-  if (!resultProduct) {
-  // search by category
-  let errCate, rsCate;
-  [errCate, rsCate] = await Untils.to(
-    Category.findOne({
-      where: {
-        name: {
-          [Op.iLike]: "%" + product_name + "%",
+  if (!resultProduct || resultProduct.length === 0) {
+    // search by category
+    let [errCate, rsCate] = await Untils.to(
+      Category.findOne({
+        where: {
+          name_without_unicode: {
+            [Op.iLike]: "%" + product_name + "%",
+          },
         },
-      },
-      raw: true,
-    })
-  );
-  if (rsCate) {
-    let err, result;
-    [err, result] = await Untils.to(
-      Cate_Product.findAll({ where: { catelog_id: rsCate.id }, raw: true })
+        raw: true,
+      })
     );
-    if (err) {
-      result = _error(2000, err);
-      return callback(2000, { data: result });
+    if (rsCate) {
+      let [errCate, rsPC] = await Untils.to(
+        Product.findAll({ where: { cate_id: rsCate.id, status: 0 }, raw: true })
+      );
+      resultProduct.push(...rsPC);
     }
-
-    let products = [];
-
-    for (item of result) {
-      let errP, rsP;
-      [errP, rsP] = await Untils.to(
-        Product.findOne({
-          where: { id: item.product_id, status: 0 },
+    // search by brand
+    if (!rsCate || rsCate.length === 0) {
+      let [errBrand, rsBrand] = await Untils.to(
+        Brand.findOne({
+          where: {
+            name_without_unicode: {
+              [Op.iLike]: "%" + product_name + "%",
+            },
+          },
           raw: true,
         })
       );
-      if (errP) {
-        console.log(`find product error: ${errP}`);
+
+      if (rsBrand) {
+        let [errBR, rsPB] = await Untils.to(
+          Product.findAll({
+            where: { brand_id: rsBrand.id, status: 0 },
+            raw: true,
+          })
+        );
+        resultProduct.push(...rsPB);
       }
-      // rsP.discount = parseFloat(rsP.discount);
-      // rsP.price = parseFloat(rsP.price);
-      // rsP.image_link = Untils.linkImage + rsP.image_link;
-      // rsP.image_list = Untils.safeParse(rsP.image_list);
-      // for (image of rsP.image_list) {
-      //   image.image_link = Untils.linkImage + image.image_link;
-      // }
-      // console.log(rsP, "rsssss");
-      products.push(rsP);
-    }
-    resultProduct.push(...products);
-    // end
     }
   }
 

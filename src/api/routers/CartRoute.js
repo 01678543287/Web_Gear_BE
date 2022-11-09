@@ -36,7 +36,7 @@ router.post("/addToCart/:product_id", (req, res) => {
         statusCode,
         err
       );
-    res.clearCookie("cart");
+    // res.clearCookie("cart");
     return Response.Success(req, res, "success", result);
   });
 });
@@ -72,7 +72,7 @@ router.post("/getCartForUser", (req, res) => {
         statusCode,
         err
       );
-    res.cookie("cart", result.cart, { maxAge: 7 * 24 * 60 * 60 * 1000 });
+    // res.cookie("cart", result.cart, { maxAge: 7 * 24 * 60 * 60 * 1000 });
     // console.log(result.cart, "rsCart");
     return Response.Success(req, res, "success", result);
   });

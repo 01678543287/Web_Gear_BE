@@ -11,16 +11,16 @@ const {
 
 const db = require("../../config/connectDB");
 const User = require("../../models/Users");
+const Order = require("../../models/Order");
 
 const { QueryTypes, Op } = require("sequelize");
-const Untils = require("../modules/Untils");
+const Untils = require("../modules/Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
 const { sequelize } = require("../../config/connectDB");
 const { now } = require("moment");
 const moment = require("moment");
-const Order = require("../../models/Order");
 const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
@@ -169,9 +169,9 @@ Service.exportOrder = async (params, callback) => {
 };
 
 Service.transaction = async (params, callback) => {
-  let queryAmountUser = `SELECT DATE_PART('month', "createdAt") AS month , SUM(amount) as total
-                          FROM transaction WHERE status = 4
-                          GROUP BY month`;
+  let queryAmountUser = `SELECT DATE_PART('month', "createdAt") AS month , SUM(total) as total
+  FROM public."order" WHERE status = 3
+  GROUP BY month`;
   let userQuery = await db.sequelize.query(queryAmountUser, {
     type: QueryTypes.SELECT,
     raw: true,
@@ -192,12 +192,12 @@ Service.exportTransaction = async (params, callback) => {
   let startAt = moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
   let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
 
-  let queryAmountUser = `select SUM(amount) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
-                         from transaction
-                         where status = 4 AND "createdAt" BETWEEN '${startAt}'::timestamp
-                                           AND '${now}'::timestamp 
-                         group by ngay 
-                         order by ngay DESC`;
+  let queryAmountUser = `select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                        from public."order"
+                        where status = 3 AND "createdAt" BETWEEN '${startAt}'::timestamp
+                                          AND '${now}'::timestamp 
+                        group by ngay 
+                        order by ngay DESC`;
   let userQuery = await db.sequelize.query(queryAmountUser, {
     type: QueryTypes.SELECT,
     raw: true,

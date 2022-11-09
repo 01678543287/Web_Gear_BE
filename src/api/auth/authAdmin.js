@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const Untils = require("../modules/Untils");
+const Untils = require("../modules/Utils");
 const Admin = require("../../models/Admin");
 
 let authenticateAdminToken = (req, res, next) => {
@@ -7,9 +7,10 @@ let authenticateAdminToken = (req, res, next) => {
     ? req.headers["authorization"]
     : req.headers["access_token"]
     ? req.headers["access_token"]
-    : req.cookies.access_token
-    ? req.cookies.access_token
-    : req.body.access_token;
+    : // : req.cookies.access_token
+      // ? req.cookies.access_token
+      req.body.access_token;
+      console.log(authHeader,'authHeader');
   if (!authHeader) return res.sendStatus(401);
   let token;
   if (!authHeader && authHeader.split(" ")[0] === "Bearer") {
@@ -18,7 +19,7 @@ let authenticateAdminToken = (req, res, next) => {
     token = authHeader;
   }
 
-  console.log(token);
+  // console.log(token);
 
   if (!token) return res.sendStatus(401);
 

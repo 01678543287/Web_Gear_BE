@@ -5,17 +5,18 @@ const db = require("../../config/connectDB");
 const Promo = require("../../models/Promoes");
 const Voucher = require("../../models/Voucher");
 const User = require("../../models/Users");
-const Cart = require("../../models/Cart");
 const CartDetail = require("../../models/Cart_Detail");
 const Order = require("../../models/Order");
+const Order_Detail = require("../../models/Order_Detail");
 const Product = require("../../models/Product");
+const Transaction = require("../../models/Transaction");
+const Promoes = require("../../models/Promoes");
+const Cart_Detail = require("../../models/Cart_Detail");
 
-const Untils = require("../modules/Untils");
+const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
-const Transaction = require("../../models/Transaction");
-const Promoes = require("../../models/Promoes");
 const MESSAGES = MESSAGESCONFIG.messages;
 const mailer = require("../sendEmail/sendEmail");
 
@@ -34,28 +35,8 @@ Service.checkout = async (params, callback) => {
     return callback(403, { data: result });
   }
 
-  let findCart = {
-    where: {
-      user_id: user.id,
-      status: 0,
-    },
-    raw: true,
-  };
-
-  let errCart, rsCart;
-  [errCart, rsCart] = await Untils.to(Cart.findOne(findCart));
-  if (errCart) {
-    let result = _error(404, errCart);
-    return callback(404, { data: result });
-  }
-  if (!rsCart) {
-    let result = _error(404);
-    return callback(404, { data: result });
-  }
-
-  let errCartDe, rsCartDe;
-  [errCartDe, rsCartDe] = await Untils.to(
-    CartDetail.findAll({ where: { card_id: rsCart.id }, raw: true })
+  let [errCartDe, rsCartDe] = await Untils.to(
+    CartDetail.findAll({ where: { user_id: user.id, status: 0 }, raw: true })
   );
   if (errCartDe) {
     let result = _error(404, errCartDe);
@@ -66,60 +47,47 @@ Service.checkout = async (params, callback) => {
     return callback(404, { data: result });
   }
 
-  for (cd of rsCartDe) {
-    let findProduct = {
-      where: {
-        id: cd.product_id,
-      },
-      raw: true,
-    };
-    let errP, rsP;
-    [errP, rsP] = await Untils.to(Product.findOne(findProduct));
-    if (errP) {
-      console.log(`find product error: ${errP}`);
-    }
-    rsP.image_link = Untils.linkImage + rsP.image_link;
-    cd.product = rsP;
-  }
-
   //create order
   let dataOrd = {
     user_id: user.id,
     discount: discount,
     total: price,
-    card_id: rsCart.id,
+    // card_id: rsCart.id,
     status: 0,
     note: note ? note : null,
-    products: JSON.stringify(rsCartDe),
+    // products: JSON.stringify(rsCartDe),
     user_checkout: JSON.stringify(userCheckout),
   };
-  console.log(dataOrd, "dataord=======");
-  let errOrd, rsOrd;
-  [errOrd, rsOrd] = await Untils.to(Order.create(dataOrd));
+
+  let [errOrd, rsOrd] = await Untils.to(Order.create(dataOrd));
 
   if (errOrd) {
     let result = _error(8200, errOrd);
     return callback(8200, { data: result });
   }
 
-  //create transaction
-  let dataTransaction = {
-    order_id: rsOrd.id,
-    amount: price - discount,
-    status: 0, // waiting comfirm
-    user_id: user.id,
-  };
-  let errTrans, rsTrans;
-  [errTrans, rsTrans] = await Untils.to(Transaction.create(dataTransaction));
+  let dataOrderDetails = rsCartDe.map((item) => {
+    return {
+      order_id: rsOrd ? rsOrd.id : null,
+      product_id: item.product_id,
+      price: item.price,
+      qty: item.qty,
+    };
+  });
 
-  if (errTrans) {
-    let result = _error(8300, errTrans);
-    return callback(8300, { data: result });
+  let [errCreateOD, rsOD] = await Untils.to(
+    Order_Detail.bulkCreate(dataOrderDetails)
+  );
+  if (errCreateOD) {
+    let result = _error(8200, errCreateOD);
+    return callback(8200, { data: result });
   }
 
-  //unactive cart
-  [errCart, rsCart] = await Untils.to(
-    Cart.update({ status: 1 }, { where: { id: rsCart.id } })
+  //delete cart_detail
+  let [errCart, rsC] = await Untils.to(
+    Cart_Detail.destroy({
+      where: { user_id: user.id },
+    })
   );
   if (errCart) {
     let result = _error(8105, errCart);
@@ -127,16 +95,14 @@ Service.checkout = async (params, callback) => {
   }
   //unactive Voucher
   if (code_voucher) {
-    let errP, rsP;
-    [errP, rsP] = await Untils.to(
+    let [errP, rsP] = await Untils.to(
       Promoes.findOne({ where: { code: code_voucher }, raw: true })
     );
 
-    let errV, rsV;
-    [errV, rsV] = await Untils.to(
+    let [errV, rsV] = await Untils.to(
       Voucher.update(
         { is_active: 1 },
-        { where: { promoes_id: rsP.id, user_id: user.id } }
+        { where: { promo_id: rsP.id, user_id: user.id } }
       )
     );
   }
@@ -502,11 +468,7 @@ Service.checkout = async (params, callback) => {
     `
   );
 
-  //   console.log(rsOrd.id, "rsOrd");
-  //   return;
-
   let result = _success(200);
-  //   result.discount = price;
   return callback(null, result);
 };
 

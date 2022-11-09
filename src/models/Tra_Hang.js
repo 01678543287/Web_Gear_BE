@@ -8,16 +8,19 @@ const Tra_Hang = db.sequelize.define(
       type: Sequelize.UUID,
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
-      allowNull: false, 
+      allowNull: false,
     },
     product_id: {
       type: Sequelize.CHAR(36),
     },
     order_id: {
-      type: Sequelize.DECIMAL(15, 2),
+      type: Sequelize.CHAR(36),
     },
     qty: {
       type: Sequelize.INTEGER,
+    },
+    price: {
+      type: Sequelize.DECIMAL(15, 2),
     },
   },
   {

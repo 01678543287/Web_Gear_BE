@@ -20,10 +20,7 @@ const Order_Detail = db.sequelize.define(
       type: Sequelize.INTEGER,
     },
     price: {
-      type: Sequelize.INTEGER,
-    },
-    rate: {
-      type: Sequelize.INTEGER,
+      type: Sequelize.DECIMAL(15, 2),
     },
   },
   {

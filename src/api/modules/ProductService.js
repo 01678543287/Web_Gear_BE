@@ -1,5 +1,8 @@
 const { DateTime } = require("luxon");
 const { eachLimit, forEach } = require("async");
+const moment = require("moment");
+const { now } = require("moment");
+
 const {
   uploadFileImageCloudinaryCloudinary,
   uploadFileImageCloudinary,
@@ -13,13 +16,16 @@ const Category = require("../../models/Category");
 const Category_Detail = require("../../models/Category_Detail");
 const Rate = require("../../models/Rate");
 const User = require("../../models/Users");
+const Thay_Doi_Gia = require("../../models/Thay_Doi_Gia");
+const Dot_Khuyen_Mai = require("../../models/Dot_Khuyen_Mai");
+const Chi_Tiet_Dot_Khuyen_Mai = require("../../models/Chi_Tiet_Dot_Khuyen_Mai");
 
 const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
 const { sequelize } = require("../../config/connectDB");
-const { QueryTypes } = require("sequelize");
+const { Op, QueryTypes } = require("sequelize");
 const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
@@ -46,12 +52,49 @@ Service.getAllProduct = async (params, callback) => {
     resultProduct,
     1,
     async (item) => {
+      item.price = parseFloat(item.price);
       item.image_link = Untils.linkImage + item.image_link;
       let imageList = Untils.safeParse(item.image_list);
       for (img of imageList) {
         img.image_link = Untils.linkImage + img.image_link;
       }
       item.image_list = imageList;
+
+      let [errKM, rsKM] = await Untils.to(
+        Chi_Tiet_Dot_Khuyen_Mai.findOne({
+          attributes: [
+            [sequelize.fn("MAX", sequelize.col("value")), "value"],
+            "dotkhuyenmai_id",
+          ],
+          where: { product_id: item.id },
+          group: ["dotkhuyenmai_id"],
+          raw: true,
+        })
+      );
+      if (errKM) {
+        console.log(errKM, "error find chi tiet dot khuyen mai");
+      }
+      if (rsKM) {
+        let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
+
+        let where = {
+          where: {
+            id: rsKM.dotkhuyenmai_id,
+            start_At: { [Op.lte]: `${nowDate.toString()}` },
+            end_At: { [Op.gte]: `${nowDate.toString()}` },
+            status: 0,
+          },
+          raw: true,
+        };
+        let [errDKM, rsDKM] = await Untils.to(Dot_Khuyen_Mai.findOne(where));
+        if (errDKM) {
+          console.log(errDKM, "error find dot khuyen mai");
+        }
+        if (rsDKM) {
+          item.priceKM =
+            rsKM && rsKM.value ? item.price * (1 - rsKM.value / 100) : null;
+        }
+      }
     },
     (err, result) => {
       if (err) {
@@ -150,19 +193,17 @@ Service.createProduct = async (params, callback) => {
     result = _error(1000, err);
     return callback(1000, { data: result });
   }
-  // params.warehouse_id = "5b9d1d26-d443-48d0-8761-68ccf4303644";
   let {
     name,
     price,
     content,
     image_link,
     image_list,
-    // warehouse_id,
-    // discount,
     status,
     qty,
     cate_id,
     brand_id,
+    user,
   } = params;
 
   if (
@@ -170,9 +211,9 @@ Service.createProduct = async (params, callback) => {
     !price ||
     !image_link ||
     !image_list ||
-    // !warehouse_id ||
-    // !qty ||
-    !cate_id
+    !cate_id ||
+    !price ||
+    !user
   ) {
     let result = _error(1000);
     return callback(1000, { data: result });
@@ -229,7 +270,6 @@ Service.createProduct = async (params, callback) => {
     image_link: imageDemo,
     image_list: JSON.stringify(listImage),
     brand_id: "1", //test
-    // qty: qty,
     cate_id: cate_id,
   };
 
@@ -240,6 +280,20 @@ Service.createProduct = async (params, callback) => {
   if (errProduct) {
     let result = _error(7003, errProduct);
     return callback(7003, { data: result });
+  }
+
+  let dataPrice = {
+    product_id: rsProduct.id,
+    admin_id: user.id,
+    price_change_date_to: moment(rsProduct.createdAt).format(
+      "YYYY-MM-DD HH:mm:ss"
+    ),
+    price: price,
+  };
+  let [errPrice, rsPrice] = await Untils.to(Thay_Doi_Gia.create(dataPrice));
+  if (errPrice) {
+    let result = _error(7004, errPrice);
+    return callback(7004, { data: result });
   }
 
   let result = _success(200);
@@ -257,23 +311,15 @@ Service.editProduct = async (params, callback) => {
     name,
     price,
     status,
-    discount,
     content,
     image_link,
     image_list,
     qty,
     cate_id,
+    user,
   } = params;
 
-  if (
-    !id ||
-    !name ||
-    !price ||
-    // !image_link ||
-    // !image_list ||
-    // !qty ||
-    !cate_id
-  ) {
+  if (!id || !name || !price || !cate_id || !user) {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
@@ -284,8 +330,7 @@ Service.editProduct = async (params, callback) => {
     },
     raw: true,
   };
-  let errProduct, rsProduct;
-  [errProduct, rsProduct] = await Untils.to(Product.findOne(findProduct));
+  let [errProduct, rsProduct] = await Untils.to(Product.findOne(findProduct));
   if (errProduct) {
     let result = _error(7000, errProduct);
     return callback(7000, { data: result });
@@ -293,6 +338,37 @@ Service.editProduct = async (params, callback) => {
   if (!rsProduct) {
     let result = _error(7000);
     return callback(7000, { data: result });
+  }
+
+  if (parseInt(rsProduct.price) !== parseInt(price)) {
+    let nowData = moment(now()).format("YYYY-MM-DD HH:mm:ss");
+    let dataUpdate = {
+      price_change_date_from: nowData,
+      active: 1,
+    };
+    let where = {
+      where: { product_id: id, active: 0 },
+    };
+    let [errUPrice, rsUPrice] = await Untils.to(
+      Thay_Doi_Gia.update(dataUpdate, where)
+    );
+    if (errUPrice) {
+      console.log(errUPrice);
+      let result = _error(7005, errUPrice);
+      return callback(7005, { data: result });
+    }
+
+    let dataPrice = {
+      product_id: id,
+      admin_id: user.id,
+      price_change_date_to: nowData,
+      price: price,
+    };
+    let [errPrice, rsPrice] = await Untils.to(Thay_Doi_Gia.create(dataPrice));
+    if (errPrice) {
+      let result = _error(7004, errPrice);
+      return callback(7004, { data: result });
+    }
   }
 
   let dataUpateProduct = {
@@ -306,7 +382,7 @@ Service.editProduct = async (params, callback) => {
     // image_list: JSON.stringify(listImage),
     qty: qty,
     cate_id: cate_id,
-    brand_id: '1',//test
+    brand_id: "1", //test
   };
 
   const idImage = Untils.generateId(8);
@@ -424,6 +500,42 @@ Service.getAProductDetail = async (params, callback) => {
     return callback(7000, { data: result });
   }
 
+  let [errKM, rsKM] = await Untils.to(
+    Chi_Tiet_Dot_Khuyen_Mai.findOne({
+      attributes: [
+        [sequelize.fn("MAX", sequelize.col("value")), "value"],
+        "dotkhuyenmai_id",
+      ],
+      where: { product_id: id },
+      group: ["dotkhuyenmai_id"],
+      raw: true,
+    })
+  );
+  if (errKM) {
+    console.log(errKM, "error find chi tiet dot khuyen mai");
+  }
+  if (rsKM) {
+    let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
+
+    let where = {
+      where: {
+        id: rsKM.dotkhuyenmai_id,
+        start_At: { [Op.lte]: `${nowDate.toString()}` },
+        end_At: { [Op.gte]: `${nowDate.toString()}` },
+        status: 0,
+      },
+      raw: true,
+    };
+    let [errDKM, rsDKM] = await Untils.to(Dot_Khuyen_Mai.findOne(where));
+    if (errDKM) {
+      console.log(errDKM, "error find dot khuyen mai");
+    }
+    if (rsDKM) {
+      rsProduct.priceKM =
+        rsKM && rsKM.value ? rsProduct.price * (1 - rsKM.value / 100) : null;
+    }
+  }
+
   //update view for product
   let dataUpateP = {
     view: parseInt(rsProduct.view) + 1,
@@ -458,23 +570,21 @@ Service.getAProductDetail = async (params, callback) => {
     totalPoint += rate.point;
     count++;
   });
-
   if (count === 0) count = 1;
-
   rsProduct.rate = totalPoint / count;
 
-  // const findCate = {
-  //   where: {
-  //     product_id: id,
-  //   },
-  //   raw: true,
-  // };
-  // let errC, rsC;
-  // [errC, rsC] = await Untils.to(Cate_Product.findOne(findCate));
+  let query = `SELECT u.name, u.avatar, rate.comment, rate.point, rate.id as id
+                FROM rate 
+                  INNER JOIN public."order" as o ON rate.order_id = o.id
+                  INNER JOIN users as u ON u.id = o.user_id
+                WHERE rate.product_id = '${id}' 
+                ORDER BY rate."createdAt" DESC`; //AND rate.comment != 'null'
+  let cmtQuery = await db.sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    raw: true,
+  });
 
-  // if (!errC) {
-  //   rsProduct.category = rsC;
-  // }
+  rsProduct.comment = cmtQuery ? cmtQuery : [];
 
   let result = _success(200);
   result.product = rsProduct;

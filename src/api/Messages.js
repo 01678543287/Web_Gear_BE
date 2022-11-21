@@ -23,6 +23,9 @@ module.exports.messages = {
   3005: "Password invalid",
   3006: "Update user failed",
   3007: "Confirm password not match",
+  3008: "Create address failed",
+  3009: "Update address failed",
+  3010: "Find address failed",
 
   4000: "Create promo failed",
   4001: "Promo not found",
@@ -39,6 +42,8 @@ module.exports.messages = {
   7001: "Product update failed",
   7002: "Cate_product update failed",
   7003: "Product create failed",
+  7004: "Price product create failed",
+  7005: "Price product update failed",
 
   8000: "Cate-Product failed",
 

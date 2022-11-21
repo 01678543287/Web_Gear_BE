@@ -4,7 +4,11 @@ const { authenticateToken } = require("../auth/authUser");
 const ServiceCheckout = require("../modules/CheckoutService");
 const router = express.Router();
 const stripe = require("stripe")(process.env.KEY_SECRET_STRIPE);
+const moment = require("moment");
+const { QueryTypes, Op } = require("sequelize");
 
+const { sequelize } = require("../../config/connectDB");
+const db = require("../../config/connectDB");
 const Response = require("../Response");
 const Untils = require("../modules/Utils");
 const _error = Untils._error;
@@ -41,7 +45,7 @@ router.post("/", authenticateToken, (req, res) => {
 router.post("/create-checkout-session", authenticateToken, async (req, res) => {
   const params = req.body;
   params.user = req.user;
-  let { user, userCheckout, price, discount, note } = params;
+  let { user, userCheckout, price, discount, note, cartList } = params;
 
   let errCartDe, rsCartDe;
   [errCartDe, rsCartDe] = await Untils.to(
@@ -105,7 +109,7 @@ router.post("/create-checkout-session", authenticateToken, async (req, res) => {
     },
   });
 
-  const line_items = rsCartDetail.map((item) => {
+  const line_items = cartList.map((item) => {
     return {
       price_data: {
         currency: "vnd",
@@ -117,9 +121,9 @@ router.post("/create-checkout-session", authenticateToken, async (req, res) => {
             id: item.id,
           },
         },
-        unit_amount: item.price,
+        unit_amount: parseInt(item.price),
       },
-      quantity: item.qty,
+      quantity: parseInt(item.qty),
     };
   });
 
@@ -168,20 +172,39 @@ router.post(
 
     // Handle the event
     if (eventType === "checkout.session.completed") {
-      // console.log(req.body.data, "req.body.data");
-      // return;
       stripe.customers
         .retrieve(data.customer)
         .then(async (customer) => {
-          let [errCartDe, rsCartDe] = await Untils.to(
-            CartDetail.findAll({
-              where: { user_id: customer.metadata.user_id },
-              raw: true,
-            })
-          );
-          if (errCartDe) {
-            console.log(`find Cart error: ${errCartDe}`);
-          }
+          // let [errCartDe, rsCartDe] = await Untils.to(
+          //   CartDetail.findAll({
+          //     where: { user_id: customer.metadata.user_id },
+          //     raw: true,
+          //   })
+          // );
+          // if (errCartDe) {
+          //   console.log(`find Cart error: ${errCartDe}`);
+          // }
+          let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
+          let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
+                              cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
+                            FROM products p 
+                              INNER JOIN cart_detail cd ON p.id = cd.product_id
+                              LEFT JOIN ( 
+                                SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
+                                FROM dot_khuyen_mai km 
+                                INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
+                                WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
+                                AND km."end_At" >= '${nowDate}'
+                                GROUP BY cdkm.product_id
+                              ) dkm ON dkm.product_id = p.id
+                            WHERE cd.user_id = '${customer.metadata.userId}'
+                              AND p.status = 0
+                            GROUP BY p.id, cd.qty`;
+          let cartQuery = await db.sequelize.query(queryProductCart, {
+            type: QueryTypes.SELECT,
+            raw: true,
+          });
+          console.log(cartQuery, "webhook cart detail");
 
           let dataOrd = {
             user_id: customer.metadata.userId,
@@ -203,12 +226,12 @@ router.post(
             console.log(`create Order error: ${errOrd}`);
           }
 
-          let dataOrderDetails = rsCartDe.map((item) => {
+          let dataOrderDetails = cartQuery.map((item) => {
             return {
               order_id: rsOrd ? rsOrd.id : null,
-              product_id: item.product_id,
-              price: item.price,
-              qty: item.qty,
+              product_id: item.id,
+              price: parseInt(item.price),
+              qty: parseInt(item.qty),
             };
           });
 

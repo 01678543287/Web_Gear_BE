@@ -113,6 +113,107 @@ router.post("/changePassword", (req, res) => {
   });
 });
 
+router.post("/addAddress", authenticateToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  UserService.addAddress(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.post("/editAddress", authenticateToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  UserService.editAddress(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.post("/detroyAddress", authenticateToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  UserService.detroyAddress(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.get("/getAddress", authenticateToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  UserService.getAddress(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.get("/getAddressDetail/:address_id", authenticateToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  params.address_id = req.params.address_id;
+  UserService.getAddressDetail(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
 router.put("/lock", authenticateAdminToken, (req, res) => {
   let params = req.body;
   UserService.lock(params, (err, result) => {

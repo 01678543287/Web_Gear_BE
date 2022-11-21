@@ -1,20 +1,25 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const db = require('../config/connectDB')
+const { Sequelize, DataTypes } = require("sequelize");
+const db = require("../config/connectDB");
 
-const Category = db.sequelize.define('category', {
+const Category = db.sequelize.define(
+  "category",
+  {
     id: {
-        type: Sequelize.UUID,
-        primaryKey: true,
-        defaultValue: DataTypes.UUIDV4,
-        allowNull: false
+      type: Sequelize.UUID,
+      primaryKey: true,
+      defaultValue: DataTypes.UUIDV4,
+      allowNull: false,
     },
     name: {
-        type: Sequelize.STRING,
+      type: Sequelize.STRING,
     },
-},
-{
-    tableName: 'category'
-}
-)
+    name_without_unicode: {
+      type: Sequelize.STRING,
+    },
+  },
+  {
+    tableName: "category",
+  }
+);
 
 module.exports = Category;

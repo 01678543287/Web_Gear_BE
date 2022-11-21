@@ -68,18 +68,14 @@ const cpUpload = multer.fields([
   { name: "image_link", maxCount: 1 },
   { name: "image_list", maxCount: 10 },
 ]);
-router.post("/createProduct", cpUpload, (req, res) => {
+router.post("/createProduct", authenticateAdminToken, cpUpload, (req, res) => {
   let params = req.body;
-  console.log(req.files,'files')
   params.image_link = req.files["image_link"]
     ? req.files["image_link"][0]
     : null;
   params.image_list = req.files["image_list"] ? req.files["image_list"] : null;
-  // console.log(req.files,'pr=0=0=0=0=')
-  // console.log(params, "pr=0=0=0=0=");
-  // console.log(req.files,'files=0=0=0=0=')
+  params.user = req.user;
 
-  // return;
   ServiceProduct.createProduct(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
@@ -97,7 +93,11 @@ router.post("/createProduct", cpUpload, (req, res) => {
   });
 });
 
-router.post("/editProduct/:id",authenticateAdminToken,cpUpload,(req, res) => {
+router.post(
+  "/editProduct/:id",
+  authenticateAdminToken,
+  cpUpload,
+  (req, res) => {
     let params = req.body;
 
     params.image_link = req.files["image_link"]
@@ -109,9 +109,7 @@ router.post("/editProduct/:id",authenticateAdminToken,cpUpload,(req, res) => {
       : null;
 
     params.id = req.params.id ? req.params.id : "";
-
-    // console.log(params, "pr0=0=0=0");
-    // return;
+    params.user = req.user;
 
     ServiceProduct.editProduct(params, (err, result) => {
       result = result || {};

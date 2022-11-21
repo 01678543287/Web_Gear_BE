@@ -14,14 +14,14 @@ const Dot_Khuyen_Mai = db.sequelize.define(
       type: Sequelize.CHAR(36),
     },
     start_At: {
-      type: Sequelize.DATE,
+      type: "TIMESTAMPS",
     },
     end_At: {
-      type: Sequelize.DATE,
+      type: "TIMESTAMPS",
     },
     status: {
       type: Sequelize.INTEGER,
-    }
+    },
   },
   {
     tableName: "dot_khuyen_mai",

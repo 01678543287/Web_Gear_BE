@@ -1,11 +1,16 @@
 const { DateTime } = require("luxon");
 const { eachLimit } = require("async");
+const moment = require("moment");
+const { Op, QueryTypes } = require("sequelize");
 
+const { sequelize } = require("../../config/connectDB");
 const db = require("../../config/connectDB");
 const Category = require("../../models/Category");
 const Category_Detail = require("../../models/Category_Detail");
 const Brand = require("../../models/Brand");
 const Product = require("../../models/Product");
+const Dot_Khuyen_Mai = require("../../models/Dot_Khuyen_Mai");
+const Chi_Tiet_Dot_Khuyen_Mai = require("../../models/Chi_Tiet_Dot_Khuyen_Mai");
 
 const Untils = require("./Utils");
 const _error = Untils._error;
@@ -41,7 +46,6 @@ Service.getAllCategory = async (params, callback) => {
         );
         item.brand = result ? result : [{}];
       }
-
     },
     (errr, resulttt) => {
       if (errr) {
@@ -71,38 +75,75 @@ Service.getCategory = async (params, callback) => {
 
 Service.getProductsByCate = async (params, callback) => {
   let { cate_id } = params;
+  let products = [];
 
-  let err, result;
-  [err, result] = await Untils.to(
-    Category_Detail.findAll({ where: { cate_id: cate_id }, raw: true })
+  let [err, result] = await Untils.to(
+    Category.findOne({ where: { id: cate_id }, raw: true })
   );
   if (err) {
     result = _error(2000, err);
     return callback(2000, { data: result });
   }
-  let products = [];
-
-  for (item of result) {
-    let errP, rsP;
-    [errP, rsP] = await Untils.to(
-      Product.findOne({ where: { cate_id: item.cate_id, status: 0 }, raw: true })
-    );
-    if (errP) {
-      console.log(`find product error: ${errP}`);
-    }
-    if (rsP) {
-      // rsP.discount = parseFloat(rsP.discount);
-      // rsP.price = parseFloat(rsP.price);
-      rsP.image_link = Untils.linkImage + rsP.image_link;
-      rsP.image_list = Untils.safeParse(rsP.image_list);
-      for (image of rsP.image_list) {
-        image.image_link = Untils.linkImage + image.image_link;
-      }
-      // console.log(rsP, "rsssss");
-      products.push(rsP);
-    }
+  if (!result) {
+    let result = _error(2000);
+    return callback(2000, { data: result });
   }
-  //   console.log(products, "pro=====");
+
+  let errP, rsP;
+  [errP, rsP] = await Untils.to(
+    Product.findAll({ where: { cate_id: cate_id, status: 0 }, raw: true })
+  );
+  if (errP) {
+    console.log(`find product error: ${errP}`);
+  }
+  // console.log(rsP, "rsP=====");
+
+  for (item of rsP) {
+    // rsP.discount = parseFloat(rsP.discount);
+    item.price = parseFloat(item.price);
+    item.image_link = Untils.linkImage + item.image_link;
+    item.image_list = Untils.safeParse(item.image_list);
+    for (image of item.image_list) {
+      image.image_link = Untils.linkImage + image.image_link;
+    }
+    let [errKM, rsKM] = await Untils.to(
+      Chi_Tiet_Dot_Khuyen_Mai.findOne({
+        attributes: [
+          [sequelize.fn("MAX", sequelize.col("value")), "value"],
+          "dotkhuyenmai_id",
+        ],
+        where: { product_id: item.id },
+        group: ["dotkhuyenmai_id"],
+        raw: true,
+      })
+    );
+    if (errKM) {
+      console.log(errKM, "error find chi tiet dot khuyen mai");
+    }
+    if (rsKM) {
+      let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
+
+      let where = {
+        where: {
+          id: rsKM.dotkhuyenmai_id,
+          start_At: { [Op.lte]: `${nowDate.toString()}` },
+          end_At: { [Op.gte]: `${nowDate.toString()}` },
+          status: 0,
+        },
+        raw: true,
+      };
+      let [errDKM, rsDKM] = await Untils.to(Dot_Khuyen_Mai.findOne(where));
+      if (errDKM) {
+        console.log(errDKM, "error find dot khuyen mai");
+      }
+      if (rsDKM) {
+        item.priceKM =
+          rsKM && rsKM.value ? item.price * (1 - rsKM.value / 100) : null;
+      }
+    }
+    products.push(item);
+  }
+  console.log(products, "pro=====");
 
   let resultss = Untils._success(200);
   resultss.products = products;
@@ -123,6 +164,7 @@ Service.createCategory = async (params, callback) => {
 
   let data = {
     name: name,
+    name_without_unicode: Untils.removeVietnameseTones(name),
   };
   let err, result;
   [err, result] = await Untils.to(Category.create(data, { raw: true }));
@@ -151,6 +193,7 @@ Service.editCategory = async (params, callback) => {
 
   let data = {
     name: name,
+    name_without_unicode: Untils.removeVietnameseTones(name),
   };
   let where = {
     where: {

@@ -1,7 +1,9 @@
 const { DateTime } = require("luxon");
 const { eachLimit } = require("async");
 const { QueryTypes, Op } = require("sequelize");
+const moment = require("moment");
 
+const { sequelize } = require("../../config/connectDB");
 const db = require("../../config/connectDB");
 const Promo = require("../../models/Promoes");
 const Voucher = require("../../models/Voucher");
@@ -9,6 +11,8 @@ const User = require("../../models/Users");
 // const Cart = require("../../models/Cart");
 const Product = require("../../models/Product");
 const Cart_Detail = require("../../models/Cart_Detail");
+const Dot_Khuyen_Mai = require("../../models/Dot_Khuyen_Mai");
+const Chi_Tiet_Dot_Khuyen_Mai = require("../../models/Chi_Tiet_Dot_Khuyen_Mai");
 
 const Untils = require("./Utils");
 const _error = Untils._error;
@@ -19,13 +23,11 @@ const MESSAGES = MESSAGESCONFIG.messages;
 let Service = {};
 
 Service.addToCart = async (params, callback) => {
-  console.log(params);
-  // return;
   if (!params) {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
-
+  console.log(params, "");
   let { product_id, user, type, qty, currentQty } = params;
 
   if (!product_id) {
@@ -41,8 +43,7 @@ Service.addToCart = async (params, callback) => {
     },
     raw: true,
   };
-  let errProduct, rsProduct;
-  [errProduct, rsProduct] = await Untils.to(Product.findOne(findProduct));
+  let [errProduct, rsProduct] = await Untils.to(Product.findOne(findProduct));
   if (errProduct) {
     let result = _error(7000, errProduct);
     return callback(7000, { data: result });
@@ -50,6 +51,11 @@ Service.addToCart = async (params, callback) => {
   if (!rsProduct) {
     let result = _error(7000);
     return callback(7000, { data: result });
+  }
+
+  if (qty > rsProduct.qty) {
+    let result = _error(8104);
+    return callback(8104, { data: result });
   }
 
   if (type === 0) {
@@ -60,8 +66,43 @@ Service.addToCart = async (params, callback) => {
     rsProduct.qty += currentQty - qty;
   }
 
-  let erP, rsP;
-  [erP, rsP] = await Untils.to(
+  let [errKM, rsKM] = await Untils.to(
+    Chi_Tiet_Dot_Khuyen_Mai.findOne({
+      attributes: [
+        [sequelize.fn("MAX", sequelize.col("value")), "value"],
+        "dotkhuyenmai_id",
+      ],
+      where: { product_id: product_id },
+      group: ["dotkhuyenmai_id"],
+      raw: true,
+    })
+  );
+  if (errKM) {
+    console.log(errKM, "error find chi tiet dot khuyen mai");
+  }
+  if (rsKM) {
+    let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
+
+    let where = {
+      where: {
+        id: rsKM.dotkhuyenmai_id,
+        start_At: { [Op.lte]: `${nowDate.toString()}` },
+        end_At: { [Op.gte]: `${nowDate.toString()}` },
+        status: 0,
+      },
+      raw: true,
+    };
+    let [errDKM, rsDKM] = await Untils.to(Dot_Khuyen_Mai.findOne(where));
+    if (errDKM) {
+      console.log(errDKM, "error find dot khuyen mai");
+    }
+    if (rsDKM) {
+      rsProduct.price =
+        rsKM && rsKM.value ? rsProduct.price * (1 - rsKM.value / 100) : null;
+    }
+  }
+
+  let [erP, rsP] = await Untils.to(
     Product.update(
       { qty: rsProduct.qty },
       {
@@ -136,15 +177,23 @@ Service.addToCart = async (params, callback) => {
     // set session || cookie
   }
 
+  let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
   let cart = {};
-  let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, p.qty as qty_product, d.qty, p.price * d.qty as total
-  FROM (SELECT cd.product_id , cd.qty
-        FROM  cart_detail as cd
-        WHERE cd.user_id = 'baed8929-d408-4dc4-a86d-bb1f248df930'
-          AND cd.status = 0
-        ORDER BY cd."createdAt" DESC
-      ) as d INNER JOIN products as p ON d.product_id = p.id
-  WHERE p.status = 0 `;
+  let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
+                            cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
+                          FROM products p 
+                            INNER JOIN cart_detail cd ON p.id = cd.product_id
+                            LEFT JOIN ( 
+                              SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
+                              FROM dot_khuyen_mai km 
+                              INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
+                              WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
+                              AND km."end_At" >= '${nowDate}'
+                              GROUP BY cdkm.product_id
+                            ) dkm ON dkm.product_id = p.id
+                          WHERE cd.user_id = '${user.id}'
+                            AND p.status = 0
+                          GROUP BY p.id, cd.qty`;
   let cartQuery = await db.sequelize.query(queryProductCart, {
     type: QueryTypes.SELECT,
     raw: true,
@@ -173,19 +222,29 @@ Service.getCartForUser = async (params, callback) => {
   let { user, cart } = params;
 
   if (user && !cart) {
+    let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
+
     let cart = {};
-    let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, p.qty as qty_product, d.qty, p.price * d.qty as total
-    FROM (SELECT cd.product_id , cd.qty
-          FROM  cart_detail as cd
-          WHERE cd.user_id = '${user.id}'
-            AND cd.status = 0
-          ORDER BY cd."createdAt" DESC
-        ) as d INNER JOIN products as p ON d.product_id = p.id
-    WHERE p.status = 0 `;
+    let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
+                              cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
+                            FROM products p 
+                              INNER JOIN cart_detail cd ON p.id = cd.product_id
+                              LEFT JOIN ( 
+                                SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
+                                FROM dot_khuyen_mai km 
+                                INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
+                                WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
+                                AND km."end_At" >= '${nowDate}'
+                                GROUP BY cdkm.product_id
+                              ) dkm ON dkm.product_id = p.id
+                            WHERE cd.user_id = '${user.id}'
+                              AND p.status = 0
+                            GROUP BY p.id, cd.qty`;
     let cartQuery = await db.sequelize.query(queryProductCart, {
       type: QueryTypes.SELECT,
       raw: true,
     });
+    console.log(cartQuery, "cart query");
     cart.totalPrice = 0;
     cart.countProduct = 0;
     for (const product of cartQuery) {
@@ -196,6 +255,7 @@ Service.getCartForUser = async (params, callback) => {
       cart.totalPrice += product.total;
     }
     cart.products = cartQuery;
+
     let result = _success(200);
     result.cart = cart ? cart : [];
     return callback(null, result);
@@ -223,26 +283,6 @@ Service.deleteProductForCart = async (params, callback) => {
     let result = _error(1000);
     return callback(1000, result);
   }
-
-  // const findCart = {
-  //   where: {
-  //     user_id: user.id,
-  //     status: 0,
-  //   },
-  //   raw: true,
-  // };
-
-  // let errC, rsC;
-  // [errC, rsC] = await Untils.to(Cart.findOne(findCart));
-
-  // if (errC) {
-  //   const result = _error(8103, errC);
-  //   return callback(8103, result);
-  // }
-  // if (!rsC) {
-  //   const result = _error(8103);
-  //   return callback(8103, result);
-  // }
 
   let [errDP, rsDP] = await Untils.to(
     Cart_Detail.findOne({
@@ -288,16 +328,23 @@ Service.deleteProductForCart = async (params, callback) => {
     })
   );
 
+  let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
   let cart = {};
-  let queryProductCart = `SELECT p.id, p.name, p.price, p.image_link, p.qty as qty_product, d.qty, p.price * d.qty as total
-  FROM (SELECT cd.product_id , cd.qty
-        FROM  cart_detail as cd
-        WHERE cd.user_id = 'baed8929-d408-4dc4-a86d-bb1f248df930'
-          AND cd.status = 0
-        ORDER BY cd."createdAt" DESC
-      ) as d INNER JOIN products as p ON d.product_id = p.id
-  WHERE p.status = 0 AND p.qty > 0 
-                            `;
+  let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
+                            cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
+                          FROM products p 
+                            INNER JOIN cart_detail cd ON p.id = cd.product_id
+                            LEFT JOIN ( 
+                              SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
+                              FROM dot_khuyen_mai km 
+                              INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
+                              WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
+                              AND km."end_At" >= '${nowDate}'
+                              GROUP BY cdkm.product_id
+                            ) dkm ON dkm.product_id = p.id
+                          WHERE cd.user_id = '${user.id}'
+                            AND p.status = 0 AND p.qty > 0
+                          GROUP BY p.id, cd.qty`;
   let cartQuery = await db.sequelize.query(queryProductCart, {
     type: QueryTypes.SELECT,
     raw: true,

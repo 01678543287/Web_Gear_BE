@@ -38,23 +38,23 @@ const { Sequelize } = require("sequelize");
 // });
 
 const sequelize = new Sequelize({
-    //database: "gpgear",
-    database: "BB_LUAN_AN_V2",
-    username: "postgres",
-    password: "123",
-    host: "localhost",
-    port: 5432,
-    dialect: "postgres",
-    define: {
-        timestamps: true
-    },
-    // dialectOptions: {
-    //     timezone: '+07:00',
-    //     // ssl: {
-    //     //     require: true, // This will help you. But you will see nwe error
-    //     //     rejectUnauthorized: false // This line will fix new error
-    //     // }
-    // },
+  //database: "gpgear",
+  database: "BB_LUAN_AN_V2",
+  username: "postgres",
+  password: "123",
+  host: "localhost",
+  port: 5432,
+  dialect: "postgres",
+  define: {
+    timestamps: true,
+  },
+  // dialectOptions: {
+  //     timezone: '+07:00',
+  //     // ssl: {
+  //     //     require: true, // This will help you. But you will see nwe error
+  //     //     rejectUnauthorized: false // This line will fix new error
+  //     // }
+  // },
 });
 
 let connectDB = async () => {

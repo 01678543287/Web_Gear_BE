@@ -46,7 +46,6 @@ Service.nhapHang = async (params, callback) => {
   // console.log(rsNH.id);
   let totalPrice = 0;
   for (item of products) {
-    console.log(item);
     totalPrice += item.amount * item.qty;
     let dataNHD = {
       nhaphang_id: rsNH.id,

@@ -266,14 +266,22 @@ CREATE TABLE "chi_tiet_dot_khuyen_mai" (
   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
 );
 
-CREATE TABLE "tra_hang" (
-  "id" varchar(36) NOT NULL,
-  "product_id" varchar(36) NOT NULL,
-  "order_id" varchar(36) NOT NULL,
-  "qty" int NOT NULL DEFAULT 1,
-  "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
-  "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
-);
+-- CREATE TABLE "tra_hang" (
+--   "id" varchar(36) NOT NULL,
+--   "order_id" varchar(36) NOT NULL,
+--   "admin_id" varchar(36) NOT NULL,
+--   "shipper_id" varchar(36) NOT NULL,
+--   "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
+--   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
+-- );
+
+-- CREATE TABLE "chi_tiet_tra_hang" (
+--   "trahang_id" varchar(36) NOT NULL,
+--   "product_id" varchar(36) NOT NULL,
+--   "qty" int NOT NULL DEFAULT 1,
+--   "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
+--   "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
+-- );
 
 ALTER TABLE "category_detail" ADD FOREIGN KEY ("brand_id") REFERENCES "brand" ("id");
 ALTER TABLE "category_detail" ADD FOREIGN KEY ("cate_id") REFERENCES "category" ("id");
@@ -320,5 +328,26 @@ ALTER TABLE "dot_khuyen_mai" ADD FOREIGN KEY ("admin_id") REFERENCES "admin" ("i
 ALTER TABLE "chi_tiet_dot_khuyen_mai" ADD FOREIGN KEY ("dotkhuyenmai_id") REFERENCES "dot_khuyen_mai" ("id");
 ALTER TABLE "chi_tiet_dot_khuyen_mai" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 
-ALTER TABLE "tra_hang" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
+-- fix table tra_hang
+CREATE TABLE "tra_hang" (
+  "id" varchar(36) NOT NULL,
+  "order_id" varchar(36) NOT NULL,
+  "admin_id" varchar(36),
+  "shipper_id" varchar(36) NOT NULL,
+  "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
+  "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
+);
+
+CREATE TABLE "chi_tiet_tra_hang" (
+  "trahang_id" varchar(36) NOT NULL,
+  "product_id" varchar(36) NOT NULL,
+  "qty" int NOT NULL DEFAULT 1,
+  "createdAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now())),
+  "updatedAt" timestamptz NOT NULL DEFAULT (timezone('Asia/Ho_Chi_Minh'::text, now()))
+);
+
 ALTER TABLE "tra_hang" ADD FOREIGN KEY ("order_id") REFERENCES "order" ("id");
+ALTER TABLE "tra_hang" ADD FOREIGN KEY ("admin_id") REFERENCES "admin" ("id");
+
+ALTER TABLE "chi_tiet_tra_hang" ADD FOREIGN KEY ("trahang_id") REFERENCES "tra_hang" ("id");
+ALTER TABLE "chi_tiet_tra_hang" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");

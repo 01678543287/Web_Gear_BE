@@ -19,9 +19,9 @@ const Cart_Detail = db.sequelize.define(
     qty: {
       type: Sequelize.INTEGER,
     },
-    price: {
-      type: Sequelize.DECIMAL(15, 2),
-    },
+    // price: {
+    //   type: Sequelize.DECIMAL(15, 2),
+    // },
     status: {
       type: Sequelize.INTEGER,
     },

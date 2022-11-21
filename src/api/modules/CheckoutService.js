@@ -28,7 +28,8 @@ Service.checkout = async (params, callback) => {
     return callback(1000, { data: result });
   }
 
-  let { user, userCheckout, price, discount, note, code_voucher } = params;
+  let { user, userCheckout, price, discount, note, code_voucher, cartList } =
+    params;
 
   if (!user) {
     let result = _error(403);
@@ -66,10 +67,10 @@ Service.checkout = async (params, callback) => {
     return callback(8200, { data: result });
   }
 
-  let dataOrderDetails = rsCartDe.map((item) => {
+  let dataOrderDetails = cartList.map((item) => {
     return {
       order_id: rsOrd ? rsOrd.id : null,
-      product_id: item.product_id,
+      product_id: item.id,
       price: item.price,
       qty: item.qty,
     };

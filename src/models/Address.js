@@ -19,6 +19,22 @@ const Address = db.sequelize.define(
       type: Sequelize.STRING,
       allowNull: false,
     },
+    status: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+    },
+    code_tinh: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+    },
+    code_huyen: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+    },
+    code_xa: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+    },
   },
   {
     tableName: "address",

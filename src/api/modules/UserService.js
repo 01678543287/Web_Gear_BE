@@ -9,8 +9,10 @@ const {
   bucket,
 } = require("../upload/UploadFileCloud");
 
-const db = require("../../config/connectDB");
 const User = require("../../models/Users");
+const Address = require("../../models/Address");
+
+const db = require("../../config/connectDB");
 const Untils = require("./Utils");
 const _error = Untils._error;
 const _success = Untils._success;
@@ -38,7 +40,7 @@ Service.createUser = async (params, callback) => {
     }
   }
 
-  const avatarImg = rsUpload ? rsUpload : '';
+  const avatarImg = rsUpload ? rsUpload : "";
 
   let dataUser = {
     name: name,
@@ -827,6 +829,218 @@ Service.changePassword = async (params, callback) => {
   //   return callback(3001, { data: result });
   // }
   let result = _success(200);
+  return callback(null, result);
+};
+
+Service.addAddress = async (params, callback) => {
+  if (!params) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let {
+    tinh,
+    huyen,
+    xa,
+    code_tinh,
+    code_huyen,
+    code_xa,
+    address,
+    status,
+    user,
+  } = params;
+
+  if (
+    !tinh ||
+    !huyen ||
+    !xa ||
+    !code_tinh ||
+    !code_huyen ||
+    !code_xa ||
+    status == null ||
+    !address ||
+    !user
+  ) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  if (status === 0) {
+    let [err, rs] = await Untils.to(
+      Address.update({ status: 1 }, { where: { user_id: user.id, status: 0 } })
+    );
+    if (err) {
+      let result = _error(3009, err);
+      return callback(3009, { data: result });
+    }
+  }
+
+  let data = {
+    address: address + ", " + xa + ", " + huyen + ", " + tinh,
+    code_tinh,
+    code_huyen,
+    code_xa,
+    user_id: user.id,
+    status: status,
+  };
+
+  let [errA, rsA] = await Untils.to(Address.create(data));
+  if (errA) {
+    let result = _error(3008, errA);
+    return callback(3008, { data: result });
+  }
+
+  let result = _success(200);
+  return callback(null, result);
+};
+
+Service.editAddress = async (params, callback) => {
+  if (!params) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+  let { address_id, tinhDetail, huyenDetail, xaDetail, address, status, user } =
+    params;
+
+  if (
+    !address_id ||
+    !tinhDetail ||
+    !huyenDetail ||
+    !xaDetail ||
+    status == null ||
+    !address ||
+    !user
+  ) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  if (status === 0) {
+    let [err, rs] = await Untils.to(
+      Address.update({ status: 1 }, { where: { user_id: user.id, status: 0 } })
+    );
+    if (err) {
+      let result = _error(3009, err);
+      return callback(3009, { data: result });
+    }
+  }
+
+  let data = {
+    address:
+      address +
+      ", " +
+      xaDetail.name +
+      ", " +
+      huyenDetail.name +
+      ", " +
+      tinhDetail.name,
+    code_tinh: tinhDetail.code,
+    code_huyen: huyenDetail.code,
+    code_xa: xaDetail.code,
+    status: status,
+  };
+
+  let [errA, rsA] = await Untils.to(
+    Address.update(data, { where: { id: address_id } })
+  );
+  if (errA) {
+    let result = _error(3008, errA);
+    return callback(3008, { data: result });
+  }
+
+  let result = _success(200);
+  return callback(null, result);
+};
+
+Service.detroyAddress = async (params, callback) => {
+  if (!params) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+  let { address_id, user } = params;
+
+  if (!address_id || !user) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let [errA, rsA] = await Untils.to(
+    Address.destroy({ where: { id: address_id } })
+  );
+  if (errA) {
+    let result = _error(3008, errA);
+    return callback(3008, { data: result });
+  }
+
+  let result = _success(200);
+  return callback(null, result);
+};
+
+Service.getAddress = async (params, callback) => {
+  if (!params) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let { user } = params;
+
+  if (!user) {
+    let result = _error(403);
+    return callback(403, { data: result });
+  }
+
+  let [errA, rsA] = await Untils.to(
+    Address.findAll({
+      where: { user_id: user.id },
+      order: [["status", "ASC"]],
+      raw: true,
+    })
+  );
+  if (errA) {
+    console.log(errA);
+    let result = _error(3010, errA);
+    return callback(3010, { data: result });
+  }
+
+  let result = _success(200);
+  result.address = rsA;
+  return callback(null, result);
+};
+
+Service.getAddressDetail = async (params, callback) => {
+  if (!params) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let { user, address_id } = params;
+
+  if (!user) {
+    let result = _error(403);
+    return callback(403, { data: result });
+  }
+
+  let [errA, rsA] = await Untils.to(
+    Address.findOne({
+      where: { id: address_id },
+      raw: true,
+    })
+  );
+  if (errA) {
+    let result = _error(3010, errA);
+    return callback(3010, { data: result });
+  }
+
+  if (!rsA) {
+    let result = _error(3010);
+    return callback(3010, { data: result });
+  }
+
+  let a = rsA.address.split(",");
+  rsA.address = a[0];
+
+  let result = _success(200);
+  result.address = rsA;
   return callback(null, result);
 };
 

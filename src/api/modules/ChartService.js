@@ -21,13 +21,21 @@ const MESSAGESCONFIG = require("../Messages");
 const { sequelize } = require("../../config/connectDB");
 const { now } = require("moment");
 const moment = require("moment");
+const { isNumber } = require("lodash");
 const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
 
 Service.guest = async (params, callback) => {
+  params.year = parseInt(params.year);
+  let currentYear = moment().year();
+  let year =
+    !params.year || params.year === "undefined" || !isNumber(params.year)
+      ? currentYear
+      : params.year;
   let queryAmountUser = `SELECT DATE_PART('month', "createdAt") AS month , COUNT(id) as amount_user
                           FROM users
+                          WHERE DATE_PART('year', "createdAt") = ${year}
                           GROUP BY month`;
   let userQuery = await db.sequelize.query(queryAmountUser, {
     type: QueryTypes.SELECT,
@@ -37,7 +45,6 @@ Service.guest = async (params, callback) => {
   for (const item of userQuery) {
     chart[item.month - 1] = parseInt(item.amount_user);
   }
-  // console.log(chart);
 
   result = _success(200);
   result.array = chart;
@@ -45,27 +52,56 @@ Service.guest = async (params, callback) => {
 };
 
 Service.exportGuest = async (params, callback) => {
-  const { start, end } = params;
-  // const s = "Sat Aug 20 2022 12:14:50 GMT+0700 (Indochina Time)";
-  // const e = "Mon Aug 24 2022 13:39:08 GMT+0700 (Indochina Time)";
-  let startAt = moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
-  // let startAt = moment().add(-13, "d").utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
-  let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
+  const { start, end, from, to, type, yearFrom, yearTo } = params;
 
-  let queryAmountUser = `select name, age, email, address, phone, status, gender, "createdAt"
+  let queryAmountUser;
+  let userQuery;
+  if (type === "day") {
+    let startAt =
+      moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
+    let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
+
+    queryAmountUser = `select name, age, email, phone, status, gender, "createdAt"
                          from users
                          where "createdAt" BETWEEN '${startAt}'::timestamp
                                            AND '${now}'::timestamp
                          order by "createdAt" DESC;`;
-  let userQuery = await db.sequelize.query(queryAmountUser, {
-    type: QueryTypes.SELECT,
-    raw: true,
-  });
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else if (type === "month") {
+    queryAmountUser = `select name, age, email, phone, status, gender, "createdAt"
+                        from users
+                        where DATE_PART('month', "createdAt") BETWEEN ${from} AND ${to} 
+                            AND  DATE_PART('year', "createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                        order by "createdAt" DESC;`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else if (type === "quarter") {
+    queryAmountUser = `select name, age, email, phone, status, gender, "createdAt"
+                      from users	
+                      WHERE EXTRACT (QUARTER FROM "createdAt") BETWEEN ${from} AND ${to}
+                      AND  DATE_PART('year', "createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                      order by "createdAt" DESC;`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else {
+    queryAmountUser = `select name, age, email, phone, status, gender, "createdAt"
+                      from users
+                      where DATE_PART('year', "createdAt") BETWEEN ${from}
+                          AND ${to}
+                      order by "createdAt" DESC;`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  }
 
-  // console.log(startAt, "startAt");
-  // console.log(now, "now");
-  // console.log(queryAmountUser, "where");
-  // console.log(userQuery, "rsG");
   userQuery.forEach((guest) => {
     guest.createdAt = guest.createdAt
       .toISOString()
@@ -89,8 +125,15 @@ Service.exportGuest = async (params, callback) => {
 };
 
 Service.order = async (params, callback) => {
+  params.year = parseInt(params.year);
+  let currentYear = moment().year();
+  let year =
+    !params.year || params.year === "undefined" || !isNumber(params.year)
+      ? currentYear
+      : params.year;
   let queryAmountUser = `SELECT DATE_PART('month', "createdAt") AS month , COUNT(id) as amount_user
                           FROM "order"
+                          WHERE DATE_PART('year', "createdAt") = ${year}
                           GROUP BY month`;
   let userQuery = await db.sequelize.query(queryAmountUser, {
     type: QueryTypes.SELECT,
@@ -100,53 +143,84 @@ Service.order = async (params, callback) => {
   for (const item of userQuery) {
     chart[item.month - 1] = parseInt(item.amount_user);
   }
-  // console.log(chart);
+
+  let queryTH = `SELECT DATE_PART('month', "createdAt") AS month , COUNT(id) as amount_user
+                  FROM "tra_hang"
+                  WHERE DATE_PART('year', "createdAt") = ${year}
+                  GROUP BY month`;
+  let THQuery = await db.sequelize.query(queryTH, {
+    type: QueryTypes.SELECT,
+    raw: true,
+  });
+  let chartTH = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  for (const item of THQuery) {
+    chartTH[item.month - 1] = parseInt(item.amount_user);
+  }
 
   result = _success(200);
   result.array = chart;
+  result.arrayTH = chartTH;
   return callback(null, result);
 };
 
 Service.exportOrder = async (params, callback) => {
-  const { start, end } = params;
-  // const s = "Sat Aug 20 2022 12:14:50 GMT+0700 (Indochina Time)";
-  // const e = "Mon Aug 24 2022 13:39:08 GMT+0700 (Indochina Time)";
-  let startAt = moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
-  // let startAt = moment().add(-13, "d").utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
-  let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
+  const { start, end, from, to, type, yearFrom, yearTo } = params;
+  let queryAmountUser;
+  let userQuery;
 
-  let queryAmountUser = `select u.name as nguoi_mua, o.total as tong, o.discount as gia_giam, o.order_date as ngay_mua, a.name as nguoi_ban, o.status as trang_thai, o."createdAt" as "createdAt"
-  from  public."order" as o INNER JOIN users as u ON o.user_id = u.id
-      LEFT JOIN admins as a ON o.admin_id = a.id
-                         where o."createdAt" BETWEEN '${startAt}'::timestamp
-                                           AND '${now}'::timestamp
-                         order by o."createdAt" DESC;`;
-  let userQuery = await db.sequelize.query(queryAmountUser, {
-    type: QueryTypes.SELECT,
-    raw: true,
-  });
+  if (type === "day") {
+    let startAt =
+      moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
+    let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
 
-  // console.log(startAt, "startAt");
-  // console.log(now, "now");
-  // console.log(queryAmountUser, "where");
-  // console.log(userQuery, "rsG");
-
-  // { name: 'Chờ xác nhận', value: 0 },
-  // { name: 'Đã xác nhận', value: 1 },
-  // { name: 'Đã thanh toán', value: 3 },
-  // { name: 'Đang giao', value: 2 },
-  // { name: 'Đã hoàn thành', value: 4 },
-  // { name: 'Đơn hàng lỗi', value: 5 },
+    queryAmountUser = `select u.name as nguoi_mua, o.total as tong, o.discount as gia_giam, o.order_date as ngay_mua, a.name as nguoi_ban, o.status as trang_thai, o."createdAt" as "createdAt"
+                      from  public."order" as o INNER JOIN users as u ON o.user_id = u.id
+                          LEFT JOIN admins as a ON o.admin_id = a.id
+                      where o."createdAt" BETWEEN '${startAt}'::timestamp
+                                        AND '${now}'::timestamp
+                      order by o."createdAt" DESC;`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else if (type === "month") {
+    queryAmountUser = `select u.name as nguoi_mua, o.total as tong, o.discount as gia_giam, o.order_date as ngay_mua, a.name as nguoi_ban, o.status as trang_thai, o."createdAt" as "createdAt"
+                      from  public."order" as o INNER JOIN users as u ON o.user_id = u.id
+                          LEFT JOIN admins as a ON o.admin_id = a.id
+                        where DATE_PART('month', o."createdAt") BETWEEN ${from} AND ${to} 
+                            AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                        order by o."createdAt" DESC;`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else if (type === "quarter") {
+    queryAmountUser = `select u.name as nguoi_mua, o.total as tong, o.discount as gia_giam, o.order_date as ngay_mua, a.name as nguoi_ban, o.status as trang_thai, o."createdAt" as "createdAt"
+                      from  public."order" as o INNER JOIN users as u ON o.user_id = u.id
+                          LEFT JOIN admins as a ON o.admin_id = a.id
+                      WHERE EXTRACT (QUARTER FROM o."createdAt") BETWEEN ${from} AND ${to}
+                      AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                      order by o."createdAt" DESC;`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else {
+    queryAmountUser = `select u.name as nguoi_mua, o.total as tong, o.discount as gia_giam, o.order_date as ngay_mua, a.name as nguoi_ban, o.status as trang_thai, o."createdAt" as "createdAt"
+                      from  public."order" as o INNER JOIN users as u ON o.user_id = u.id
+                          LEFT JOIN admins as a ON o.admin_id = a.id
+                      where DATE_PART('year', o."createdAt") BETWEEN ${from}
+                          AND ${to}
+                      order by o."createdAt" DESC;`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  }
 
   userQuery.forEach((guest) => {
-    guest.createdAt = guest.createdAt
-      .toISOString()
-      .replace(/T/, " ")
-      .replace(/\..+/, "");
-    guest.ngay_mua = guest.ngay_mua
-      .toISOString()
-      .replace(/T/, " ")
-      .replace(/\..+/, "");
+    guest.createdAt = moment(guest.createdAt).format("DD/MM/YYYY HH:mm:ss");
+    guest.ngay_mua = moment(guest.ngay_mua).format("DD/MM/YYYY HH:mm:ss");
 
     if (guest.trang_thai === 0) {
       guest.trang_thai = "Chờ xác nhận";
@@ -169,18 +243,49 @@ Service.exportOrder = async (params, callback) => {
 };
 
 Service.transaction = async (params, callback) => {
+  params.year = parseInt(params.year);
+  let currentYear = moment().year();
+  let year =
+    !params.year || params.year === "undefined" || !isNumber(params.year)
+      ? currentYear
+      : params.year;
   let queryAmountUser = `SELECT DATE_PART('month', "createdAt") AS month , SUM(total) as total
-  FROM public."order" WHERE status = 3
-  GROUP BY month`;
+                        FROM public."order" 
+                        WHERE (status = 4 OR status = 7) AND DATE_PART('year', "createdAt") = ${year}
+                        GROUP BY month`;
   let userQuery = await db.sequelize.query(queryAmountUser, {
     type: QueryTypes.SELECT,
     raw: true,
   });
-  let chart = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  let chartOrder = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (const item of userQuery) {
-    chart[item.month - 1] = parseInt(item.total);
+    chartOrder[item.month - 1] = parseInt(item.total);
   }
-  // console.log(chart);
+
+  let queryTraHang = `SELECT DATE_PART('month', th.at) AS month , SUM(th.total) as total
+                      FROM (
+                        SELECT th."createdAt" at, sum(od.price) total, th.id
+                        FROM tra_hang th 
+                        INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                        INNER JOIN public."order" o ON o.id = th.order_id
+                        INNER JOIN order_detail od ON thd.product_id = od.product_id
+                        GROUP BY th.id, at
+                      ) th
+                      WHERE DATE_PART('year', th.at) = ${year}
+                      GROUP BY month`;
+
+  let THQuery = await db.sequelize.query(queryTraHang, {
+    type: QueryTypes.SELECT,
+    raw: true,
+  });
+  let chartTraHang = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  for (const item of THQuery) {
+    chartTraHang[item.month - 1] = parseInt(item.total);
+  }
+
+  var chart = chartOrder.map(function (v, i) {
+    return v - chartTraHang[i];
+  });
 
   result = _success(200);
   result.array = chart;
@@ -188,39 +293,128 @@ Service.transaction = async (params, callback) => {
 };
 
 Service.exportTransaction = async (params, callback) => {
-  const { start, end } = params;
-  let startAt = moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
-  let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
+  const { start, end, from, to, type, yearFrom, yearTo } = params;
+  let queryAmountUser, queryNH;
+  let userQuery, NHQuery;
 
-  let queryAmountUser = `select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
-                        from public."order"
-                        where status = 3 AND "createdAt" BETWEEN '${startAt}'::timestamp
-                                          AND '${now}'::timestamp 
-                        group by ngay 
-                        order by ngay DESC`;
-  let userQuery = await db.sequelize.query(queryAmountUser, {
-    type: QueryTypes.SELECT,
-    raw: true,
-  });
+  // let startAt = moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
+  // let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
 
-  let queryNH = `select SUM(total) as chi_phi , to_char("createdAt", 'DD/MM/YYYY') as ngay
-  from nhap_hang
-                         where "createdAt" BETWEEN '${startAt}'::timestamp
-                                           AND '${now}'::timestamp 
-                         group by ngay 
-                         order by ngay DESC`;
-  let NHQuery = await db.sequelize.query(queryNH, {
-    type: QueryTypes.SELECT,
-    raw: true,
-  });
-
-  // console.log(startAt, "startAt");
-  // console.log(now, "now");
-  // console.log(queryAmountUser, "where");
-  // console.log(userQuery, "rsG");
-  // userQuery.forEach((guest) => {
-  //   guest.ngay = guest.ngay.toISOString().replace(/T/, " ").replace(/\..+/, "");
+  // let queryAmountUser = `select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+  //                       from public."order"
+  //                       where (status = 4 OR status = 7) AND "createdAt" BETWEEN '${startAt}'::timestamp
+  //                                         AND '${now}'::timestamp
+  //                       group by ngay
+  //                       order by ngay DESC`;
+  // let userQuery = await db.sequelize.query(queryAmountUser, {
+  //   type: QueryTypes.SELECT,
+  //   raw: true,
   // });
+
+  // let queryNH = `select SUM(total) as chi_phi , to_char("createdAt", 'DD/MM/YYYY') as ngay
+  // from nhap_hang
+  //                        where "createdAt" BETWEEN '${startAt}'::timestamp
+  //                                          AND '${now}'::timestamp
+  //                        group by ngay
+  //                        order by ngay DESC`;
+  // let NHQuery = await db.sequelize.query(queryNH, {
+  //   type: QueryTypes.SELECT,
+  //   raw: true,
+  // });
+
+  if (type === "day") {
+    let startAt =
+      moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
+    let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
+
+    queryAmountUser = `select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                      from public."order"
+                      where (status = 4 OR status = 7) AND "createdAt" BETWEEN '${startAt}'::timestamp
+                                        AND '${now}'::timestamp
+                      group by ngay
+                      order by ngay DESC`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+
+    queryNH = `select SUM(total) as chi_phi , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                from nhap_hang
+                where "createdAt" BETWEEN '${startAt}'::timestamp
+                                  AND '${now}'::timestamp
+                group by ngay
+                order by ngay DESC`;
+    NHQuery = await db.sequelize.query(queryNH, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else if (type === "month") {
+    queryAmountUser = `select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                      from public."order" o
+                      where (status = 4 OR status = 7) AND DATE_PART('month', o."createdAt") BETWEEN ${from} AND ${to} 
+                          AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                      group by ngay
+                      order by ngay DESC`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+
+    queryNH = `select SUM(total) as chi_phi , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                  from nhap_hang
+                  where DATE_PART('month', "createdAt") BETWEEN ${from} AND ${to} 
+                  AND  DATE_PART('year', "createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                  group by ngay
+                  order by ngay DESC`;
+    NHQuery = await db.sequelize.query(queryNH, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else if (type === "quarter") {
+    queryAmountUser = `Select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                      from public."order" o
+                      WHERE (status = 4 OR status = 7) AND EXTRACT (QUARTER FROM o."createdAt") BETWEEN ${from} AND ${to}
+                      AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                      group by ngay
+                      order by ngay DESC`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+
+    queryNH = `select SUM(total) as chi_phi , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                  from nhap_hang
+                  where EXTRACT (QUARTER FROM "createdAt") BETWEEN ${from} AND ${to}
+                  AND  DATE_PART('year', "createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                  group by ngay
+                  order by ngay DESC`;
+    NHQuery = await db.sequelize.query(queryNH, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else {
+    queryAmountUser = `Select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                      from public."order" o
+                      where (status = 4 OR status = 7) AND DATE_PART('year', o."createdAt") BETWEEN ${from}
+                          AND ${to}
+                      group by ngay
+                      order by ngay DESC`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+
+    queryNH = `select SUM(total) as chi_phi , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                  from nhap_hang
+                  where DATE_PART('year', "createdAt") BETWEEN ${from}
+                  AND ${to}
+                  group by ngay
+                  order by ngay DESC`;
+    NHQuery = await db.sequelize.query(queryNH, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  }
 
   result = _success(200);
   result.dataSheet = userQuery;
@@ -229,8 +423,12 @@ Service.exportTransaction = async (params, callback) => {
 };
 
 Service.profit = async (params, callback) => {
+  let currentYear = moment().year();
+  let year =
+    params.year && params.year !== "undefined" ? params.year : currentYear;
   let queryAmountUser = `SELECT DATE_PART('month', "createdAt") AS month , SUM(total) as total
                           FROM nhap_hang
+                          WHERE DATE_PART('year', "createdAt") = ${year}
                           GROUP BY month`;
   let userQuery = await db.sequelize.query(queryAmountUser, {
     type: QueryTypes.SELECT,
@@ -243,6 +441,105 @@ Service.profit = async (params, callback) => {
 
   result = _success(200);
   result.array = chart;
+  return callback(null, result);
+};
+
+Service.exportTraHang = async (params, callback) => {
+  const { start, end, from, to, type, yearFrom, yearTo } = params;
+  let queryAmountUser;
+  let userQuery;
+
+  // let startAt = moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
+  // let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
+
+  // let queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+  //                       FROM tra_hang th
+  //                         INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+  //                         INNER JOIN public."order" o ON o.id = th.order_id
+  //                         INNER JOIN order_detail od ON thd.product_id = od.product_id
+  //                         INNER JOIN users AS u ON o.user_id = u.id
+  //                         LEFT JOIN admins AS a ON th.admin_id = a.id
+  //                       WHERE th."createdAt" BETWEEN '${startAt}'::timestamp
+  //                         AND '${now}'::timestamp
+  //                       GROUP BY th.id, at,u.name, a.name`;
+  // let userQuery = await db.sequelize.query(queryAmountUser, {
+  //   type: QueryTypes.SELECT,
+  //   raw: true,
+  // });
+  if (type === "day") {
+    let startAt =
+      moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
+    let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
+
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+                        FROM tra_hang th
+                          INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                          INNER JOIN public."order" o ON o.id = th.order_id
+                          INNER JOIN order_detail od ON thd.product_id = od.product_id
+                          INNER JOIN users AS u ON o.user_id = u.id
+                          LEFT JOIN admins AS a ON th.admin_id = a.id
+                        WHERE th."createdAt" BETWEEN '${startAt}'::timestamp
+                          AND '${now}'::timestamp
+                        GROUP BY th.id, at,u.name, a.name`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else if (type === "month") {
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+                        FROM tra_hang th
+                          INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                          INNER JOIN public."order" o ON o.id = th.order_id
+                          INNER JOIN order_detail od ON thd.product_id = od.product_id
+                          INNER JOIN users AS u ON o.user_id = u.id
+                          LEFT JOIN admins AS a ON th.admin_id = a.id
+                        where DATE_PART('month', o."createdAt") BETWEEN ${from} AND ${to} 
+                            AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                        GROUP BY th.id, at,u.name, a.name`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else if (type === "quarter") {
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+                      FROM tra_hang th
+                        INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                        INNER JOIN public."order" o ON o.id = th.order_id
+                        INNER JOIN order_detail od ON thd.product_id = od.product_id
+                        INNER JOIN users AS u ON o.user_id = u.id
+                        LEFT JOIN admins AS a ON th.admin_id = a.id
+                      WHERE EXTRACT (QUARTER FROM o."createdAt") BETWEEN ${from} AND ${to}
+                      AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                      GROUP BY th.id, at,u.name, a.name`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  } else {
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+                        FROM tra_hang th
+                          INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                          INNER JOIN public."order" o ON o.id = th.order_id
+                          INNER JOIN order_detail od ON thd.product_id = od.product_id
+                          INNER JOIN users AS u ON o.user_id = u.id
+                          LEFT JOIN admins AS a ON th.admin_id = a.id
+                      where DATE_PART('year', o."createdAt") BETWEEN ${from}
+                          AND ${to}
+                          GROUP BY th.id, at,u.name, a.name`;
+    userQuery = await db.sequelize.query(queryAmountUser, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+  }
+
+  userQuery.forEach((guest) => {
+    guest.createdAt = moment(guest.createdAt).format("DD/MM/YYYY HH:mm:ss");
+    delete guest.id;
+    delete guest.at;
+  });
+
+  result = _success(200);
+  result.dataSheet = userQuery;
   return callback(null, result);
 };
 

@@ -2,6 +2,7 @@ const { DateTime } = require("luxon");
 const { eachLimit, forEach } = require("async");
 const moment = require("moment");
 const { now } = require("moment");
+const _ = require("lodash");
 
 const {
   uploadFileImageCloudinaryCloudinary,
@@ -26,6 +27,7 @@ const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
 const { sequelize } = require("../../config/connectDB");
 const { Op, QueryTypes } = require("sequelize");
+const Brand = require("../../models/Brand");
 const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
@@ -60,44 +62,38 @@ Service.getAllProduct = async (params, callback) => {
       }
       item.image_list = imageList;
 
-      let [errKM, rsKM] = await Untils.to(
-        Chi_Tiet_Dot_Khuyen_Mai.findOne({
-          attributes: [
-            [sequelize.fn("MAX", sequelize.col("value")), "value"],
-            "dotkhuyenmai_id",
-          ],
-          where: { product_id: item.id },
-          group: ["dotkhuyenmai_id"],
-          raw: true,
-        })
-      );
-      if (errKM) {
-        console.log(errKM, "error find chi tiet dot khuyen mai");
-      }
-      if (rsKM) {
-        let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
+      let query = `SELECT max(dkmd.value) as max
+                    FROM products p
+                      INNER JOIN chi_tiet_dot_khuyen_mai dkmd ON dkmd.product_id = p.id
+                      INNER JOIN dot_khuyen_mai dkm ON dkm.id = dkmd.dotkhuyenmai_id
+                    WHERE p.id = '${item.id}' 
+                      AND dkm."start_At" <= NOW()
+                        AND dkm."end_At" >= NOW()`;
+      let dkmd = await db.sequelize.query(query, {
+        type: QueryTypes.SELECT,
+        raw: true,
+      });
+      let valueMax = dkmd[0].max ? dkmd[0].max : 0;
 
-        let where = {
-          where: {
-            id: rsKM.dotkhuyenmai_id,
-            start_At: { [Op.lte]: `${nowDate.toString()}` },
-            end_At: { [Op.gte]: `${nowDate.toString()}` },
-            status: 0,
-          },
-          raw: true,
-        };
-        let [errDKM, rsDKM] = await Untils.to(Dot_Khuyen_Mai.findOne(where));
-        if (errDKM) {
-          console.log(errDKM, "error find dot khuyen mai");
-        }
-        if (rsDKM) {
-          item.priceKM =
-            rsKM && rsKM.value ? item.price * (1 - rsKM.value / 100) : null;
-        }
+      item.priceKM =
+        valueMax !== 0 ? (item.price * (100 - valueMax)) / 100 : null;
+
+      let [errRate, rsRate] = await Untils.to(
+        Rate.findAndCountAll({ where: { product_id: item.id }, raw: true })
+      );
+      if (errRate) {
+        let result = _error(8700, errRate);
+        return callback(8700, { data: result });
       }
+      let ratePoint = 0;
+      if (rsRate.rows.length > 0) {
+        ratePoint = _.sumBy(rsRate.rows, "point") / rsRate.count;
+      }
+      item.pointRate = ratePoint;
     },
     (err, result) => {
       if (err) {
+        console.log(err);
         result = _error(7000, err);
         return callback(7000, { data: result });
       }
@@ -124,6 +120,39 @@ Service.getAllProductNH = async (params, callback) => {
     let result = _error(7000, errProduct);
     return callback(7000, { data: result });
   }
+
+  eachLimit(
+    resultProduct,
+    1,
+    async (item) => {
+      item.image_link = Untils.linkImage + item.image_link;
+      let imageList = Untils.safeParse(item.image_list);
+      for (img of imageList) {
+        img.image_link = Untils.linkImage + img.image_link;
+      }
+      item.image_list = imageList;
+    },
+    (err, result) => {
+      if (err) {
+        result = _error(7000, err);
+        return callback(7000, { data: result });
+      }
+      result = _success(200);
+      result.products = resultProduct;
+      return callback(null, result);
+    }
+  );
+};
+
+Service.getProductListDKM = async (params, callback) => {
+  let query = `SELECT p.* 
+                FROM products p LEFT JOIN chi_tiet_dot_khuyen_mai dkm ON p.id = dkm.product_id
+                WHERE p.status = 0 AND dkm.id IS NULL`;
+
+  let resultProduct = await db.sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    raw: true,
+  });
 
   eachLimit(
     resultProduct,
@@ -213,6 +242,7 @@ Service.createProduct = async (params, callback) => {
     !image_list ||
     !cate_id ||
     !price ||
+    !brand_id ||
     !user
   ) {
     let result = _error(1000);
@@ -233,6 +263,22 @@ Service.createProduct = async (params, callback) => {
   }
   if (!rsCate) {
     let result = _error(2000, errCate);
+    return callback(2000, result);
+  }
+
+  let whereBrand = {
+    where: {
+      id: brand_id,
+    },
+    raw: true,
+  };
+  let [errBrand, rsBrand] = await Untils.to(Brand.findOne(whereBrand));
+  if (errBrand) {
+    let result = _error(2000, errBrand);
+    return callback(2000, result);
+  }
+  if (!rsBrand) {
+    let result = _error(2000);
     return callback(2000, result);
   }
 
@@ -269,7 +315,7 @@ Service.createProduct = async (params, callback) => {
     status: status ? status : 0,
     image_link: imageDemo,
     image_list: JSON.stringify(listImage),
-    brand_id: "1", //test
+    brand_id: brand_id,
     cate_id: cate_id,
   };
 
@@ -316,10 +362,11 @@ Service.editProduct = async (params, callback) => {
     image_list,
     qty,
     cate_id,
+    brand_id,
     user,
   } = params;
 
-  if (!id || !name || !price || !cate_id || !user) {
+  if (!id || !name || !price || !cate_id || !brand_id || !user) {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
@@ -382,7 +429,7 @@ Service.editProduct = async (params, callback) => {
     // image_list: JSON.stringify(listImage),
     qty: qty,
     cate_id: cate_id,
-    brand_id: "1", //test
+    brand_id: brand_id,
   };
 
   const idImage = Untils.generateId(8);
@@ -500,41 +547,21 @@ Service.getAProductDetail = async (params, callback) => {
     return callback(7000, { data: result });
   }
 
-  let [errKM, rsKM] = await Untils.to(
-    Chi_Tiet_Dot_Khuyen_Mai.findOne({
-      attributes: [
-        [sequelize.fn("MAX", sequelize.col("value")), "value"],
-        "dotkhuyenmai_id",
-      ],
-      where: { product_id: id },
-      group: ["dotkhuyenmai_id"],
-      raw: true,
-    })
-  );
-  if (errKM) {
-    console.log(errKM, "error find chi tiet dot khuyen mai");
-  }
-  if (rsKM) {
-    let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
+  let queryDKM = `SELECT max(dkmd.value) as max
+                    FROM products p
+                      INNER JOIN chi_tiet_dot_khuyen_mai dkmd ON dkmd.product_id = p.id
+                      INNER JOIN dot_khuyen_mai dkm ON dkm.id = dkmd.dotkhuyenmai_id
+                    WHERE p.id = '${id}' 
+                      AND dkm."start_At" <= NOW()
+                        AND dkm."end_At" >= NOW()`;
+  let dkmd = await db.sequelize.query(queryDKM, {
+    type: QueryTypes.SELECT,
+    raw: true,
+  });
+  let valueMax = dkmd[0].max ? dkmd[0].max : 0;
 
-    let where = {
-      where: {
-        id: rsKM.dotkhuyenmai_id,
-        start_At: { [Op.lte]: `${nowDate.toString()}` },
-        end_At: { [Op.gte]: `${nowDate.toString()}` },
-        status: 0,
-      },
-      raw: true,
-    };
-    let [errDKM, rsDKM] = await Untils.to(Dot_Khuyen_Mai.findOne(where));
-    if (errDKM) {
-      console.log(errDKM, "error find dot khuyen mai");
-    }
-    if (rsDKM) {
-      rsProduct.priceKM =
-        rsKM && rsKM.value ? rsProduct.price * (1 - rsKM.value / 100) : null;
-    }
-  }
+  rsProduct.priceKM =
+    valueMax !== 0 ? (rsProduct.price * (100 - valueMax)) / 100 : null;
 
   //update view for product
   let dataUpateP = {
@@ -590,119 +617,5 @@ Service.getAProductDetail = async (params, callback) => {
   result.product = rsProduct;
   return callback(null, result);
 };
-
-// Service.getAProductDetail123 = async (params, callback) => {
-//   if (!params) {
-//     let result = _error(1000);
-//     return callback(1000, { data: result });
-//   }
-
-//   let { id, user } = params;
-
-//   if (!id) {
-//     let result = _error(1000);
-//     return callback(1000, { data: result });
-//   }
-
-//   let where = {
-//     where: {
-//       id: id,
-//     },
-//     raw: true,
-//   };
-
-//   let errProduct, rsProduct;
-//   [errProduct, rsProduct] = await Untils.to(Product.findOne(where));
-//   if (errProduct) {
-//     let result = _error(500, errProduct);
-//     return callback(500, { data: result });
-//   }
-//   if (!rsProduct) {
-//     let result = _error(7000);
-//     return callback(7000, { data: result });
-//   }
-
-//   //update view for product
-//   let dataUpateP = {
-//     view: parseInt(rsProduct.view) + 1,
-//   };
-//   let errP, rsP;
-//   [errP, rsP] = await Untils.to(Product.update(dataUpateP, where));
-//   if (errP) {
-//     console.log("update view + 1 failed");
-//   }
-
-//   if (user) {
-//     let dataH = {
-//       product_id: id,
-//       user_id: user.id,
-//     };
-//     let errH, rsH;
-//     [errH, rsH] = await Untils.to(History.create(dataH));
-//     if (errH) {
-//       console.log(`Create history error: ${errH}`);
-//     }
-//   }
-
-//   rsProduct.discount = parseFloat(rsProduct.discount);
-//   rsProduct.price = parseFloat(rsProduct.price);
-//   rsProduct.image_link = Untils.linkImage + rsProduct.image_link;
-//   rsProduct.image_list = Untils.safeParse(rsProduct.image_list);
-//   for (image of rsProduct.image_list) {
-//     image.image_link = Untils.linkImage + image.image_link;
-//   }
-
-//   let cmt = await db.sequelize.query(
-//     `SELECT U.ID as user_id,
-//             U.NAME as user_name,
-//             U.AVATAR as user_avatar,
-//             C.*
-//     FROM  COMMENT AS C INNER JOIN USERS AS U ON C.USER_ID = U.ID,
-//           PRODUCTS AS P
-//     WHERE U.STATUS = 1 AND P.ID = '${id}'`,
-//     { type: QueryTypes.SELECT, raw: true }
-//   );
-
-//   rsProduct.cmt = cmt;
-
-//   let findRate = {
-//     where: {
-//       product_id: id,
-//     },
-//     raw: true,
-//   };
-//   let errRate, rsRate;
-//   [errRate, rsRate] = await Untils.to(Rate.findAll(findRate));
-//   if (errRate) {
-//     console.log("get rate product error: ", errRate);
-//   }
-//   let totalPoint = 0;
-//   let count = 0;
-//   rsRate.forEach((rate) => {
-//     totalPoint += rate.point;
-//     count++;
-//   });
-
-//   if (count === 0) count = 1;
-
-//   rsProduct.rate = totalPoint / count;
-
-//   const findCate = {
-//     where: {
-//       product_id: id,
-//     },
-//     raw: true,
-//   };
-//   let errC, rsC;
-//   [errC, rsC] = await Untils.to(Cate_Product.findOne(findCate));
-
-//   if (!errC) {
-//     rsProduct.category = rsC;
-//   }
-
-//   let result = _success(200);
-//   result.product = rsProduct;
-//   return callback(null, result);
-// };
 
 module.exports = Service;

@@ -1,5 +1,6 @@
 const express = require("express");
 const { authenticateAdminToken } = require("../auth/authAdmin");
+const { authenticateShipperToken } = require("../auth/authShipper");
 const { authenticateToken } = require("../auth/authUser");
 const ServiceOrder = require("../modules/OrderService");
 const Response = require("../Response");
@@ -56,8 +57,6 @@ router.get("/getTHDetailForUser/:order_id", authenticateToken, (req, res) => {
   let params = req.body;
   params.user = req.user;
   params.order_id = req.params.order_id;
-  // console.log(params, "pr=====");
-  // // return;
   ServiceOrder.getTHDetailForUser(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
@@ -79,6 +78,26 @@ router.get("/getOrderAdmin", authenticateAdminToken, (req, res) => {
   let params = req.body;
   params.user = req.user;
   ServiceOrder.getOrderAdmin(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
+router.get("/getOrderShipper", authenticateShipperToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  ServiceOrder.getOrderShipper(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -156,6 +175,30 @@ router.post("/changeStatusOrder", authenticateToken, (req, res) => {
     return Response.Success(req, res, "success", result);
   });
 });
+
+router.post(
+  "/changeStatusOrderShipper",
+  authenticateShipperToken,
+  (req, res) => {
+    let params = req.body;
+    params.user = req.user;
+    ServiceOrder.changeStatusOrderShipper(params, (err, result) => {
+      result = result || {};
+      let { errorCode, message, data, statusCode } = result;
+      if (err)
+        return Response.Error(
+          req,
+          res,
+          errorCode,
+          message,
+          data,
+          statusCode,
+          err
+        );
+      return Response.Success(req, res, "success", result);
+    });
+  }
+);
 
 router.post("/setRateOrderDetail", authenticateToken, (req, res) => {
   let params = req.body;

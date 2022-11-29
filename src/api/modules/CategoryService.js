@@ -58,24 +58,46 @@ Service.getAllCategory = async (params, callback) => {
 };
 
 Service.getCategory = async (params, callback) => {
-  console.log(params, "pr=0=0=");
-  // return;
-  let err, result;
-  [err, result] = await Untils.to(
+  let brand = [];
+  let [err, result] = await Untils.to(
     Category.findOne({ where: { id: params.cate_id }, raw: true })
   );
   if (err) {
     result = _error(2000, err);
     return callback(2000, { data: result });
   }
+
+  let [errCD, rsCD] = await Untils.to(
+    Category_Detail.findAll({ where: { cate_id: params.cate_id }, raw: true })
+  );
+  if (errCD) {
+    result = _error(2000, errCD);
+    return callback(2000, { data: result });
+  }
+
+  for (item of rsCD) {
+    let [errFB, rsFB] = await Untils.to(
+      Brand.findOne({ where: { id: item.brand_id }, raw: true })
+    );
+    if (errFB) {
+      let result = _error(8000, errFB);
+      return callback(8000, { data: result });
+    }
+    if (rsFB) {
+      brand.push(rsFB);
+    }
+  }
+
   let resultCB = Untils._success(200);
   resultCB.category = result;
+  resultCB.brand = brand;
   return callback(null, resultCB);
 };
 
 Service.getProductsByCate = async (params, callback) => {
   let { cate_id } = params;
   let products = [];
+  let brands = [];
 
   let [err, result] = await Untils.to(
     Category.findOne({ where: { id: cate_id }, raw: true })
@@ -96,57 +118,90 @@ Service.getProductsByCate = async (params, callback) => {
   if (errP) {
     console.log(`find product error: ${errP}`);
   }
-  // console.log(rsP, "rsP=====");
 
   for (item of rsP) {
-    // rsP.discount = parseFloat(rsP.discount);
     item.price = parseFloat(item.price);
     item.image_link = Untils.linkImage + item.image_link;
     item.image_list = Untils.safeParse(item.image_list);
     for (image of item.image_list) {
       image.image_link = Untils.linkImage + image.image_link;
     }
-    let [errKM, rsKM] = await Untils.to(
-      Chi_Tiet_Dot_Khuyen_Mai.findOne({
-        attributes: [
-          [sequelize.fn("MAX", sequelize.col("value")), "value"],
-          "dotkhuyenmai_id",
-        ],
-        where: { product_id: item.id },
-        group: ["dotkhuyenmai_id"],
-        raw: true,
-      })
-    );
-    if (errKM) {
-      console.log(errKM, "error find chi tiet dot khuyen mai");
-    }
-    if (rsKM) {
-      let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
 
-      let where = {
-        where: {
-          id: rsKM.dotkhuyenmai_id,
-          start_At: { [Op.lte]: `${nowDate.toString()}` },
-          end_At: { [Op.gte]: `${nowDate.toString()}` },
-          status: 0,
-        },
-        raw: true,
-      };
-      let [errDKM, rsDKM] = await Untils.to(Dot_Khuyen_Mai.findOne(where));
-      if (errDKM) {
-        console.log(errDKM, "error find dot khuyen mai");
-      }
-      if (rsDKM) {
-        item.priceKM =
-          rsKM && rsKM.value ? item.price * (1 - rsKM.value / 100) : null;
-      }
-    }
+    let query = `SELECT max(dkmd.value) as max
+    FROM products p
+      INNER JOIN chi_tiet_dot_khuyen_mai dkmd ON dkmd.product_id = p.id
+      INNER JOIN dot_khuyen_mai dkm ON dkm.id = dkmd.dotkhuyenmai_id
+    WHERE p.id = '${item.id}' 
+      AND dkm."start_At" <= NOW()
+        AND dkm."end_At" >= NOW()`;
+    let dkmd = await db.sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      raw: true,
+    });
+    let valueMax = dkmd[0].max ? dkmd[0].max : 0;
+
+    item.priceKM =
+      valueMax !== 0 ? (item.price * (100 - valueMax)) / 100 : null;
     products.push(item);
   }
-  console.log(products, "pro=====");
 
+  let [errB, rsB] = await Untils.to(
+    Category_Detail.findAll({ where: { cate_id: cate_id }, raw: true })
+  );
+  if (errB) {
+    let result = _error(8000, errB);
+    return callback(8000, { data: result });
+  }
+  console.log(rsB);
+  // eachLimit(
+  //   rsB,
+  //   1,
+  //   async (item) => {
+  // let [errFB, rsFB] = await Untils.to(
+  //   Brand.findOne({ where: { id: item.brand_id }, raw: true })
+  // );
+  // if (errFB) {
+  //   console.log(errFB);
+  //   let result = _error(8000, errFB);
+  //   return callback(8000, { data: result });
+  // }
+  // console.log(rsFB);
+  // if (rsFB) {
+  //   let temp = {
+  //     id: rsFB.id,
+  //     name: rsFB.name,
+  //   };
+  //   brands.push(temp);
+  //     }
+  //   },
+  //   (err, result) => {
+  //     if (err) {
+  //       console.log(err);
+  //     }
+  //   }
+  // );
+  for (item of rsB) {
+    let [errFB, rsFB] = await Untils.to(
+      Brand.findOne({ where: { id: item.brand_id }, raw: true })
+    );
+    if (errFB) {
+      console.log(errFB);
+      let result = _error(8000, errFB);
+      return callback(8000, { data: result });
+    }
+    if (rsFB) {
+      let temp = {
+        id: rsFB.id,
+        name: rsFB.name,
+      };
+      brands.push(temp);
+    }
+  }
+
+  console.log(brands);
   let resultss = Untils._success(200);
   resultss.products = products;
+  resultss.brands = brands;
   return callback(null, resultss);
 };
 
@@ -156,8 +211,10 @@ Service.createCategory = async (params, callback) => {
     return callback(1000, { data: result });
   }
 
-  let { name } = params;
-  if (!name) {
+  let { name, cate } = params;
+  // console.log(params);
+  // return;
+  if (!name || !cate) {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
@@ -166,12 +223,25 @@ Service.createCategory = async (params, callback) => {
     name: name,
     name_without_unicode: Untils.removeVietnameseTones(name),
   };
-  let err, result;
-  [err, result] = await Untils.to(Category.create(data, { raw: true }));
+
+  let [err, result] = await Untils.to(Category.create(data, { raw: true }));
   if (err) {
     result = _error(2001, err);
     return callback(2001, { data: result });
   }
+
+  let dataCD = cate.map((item) => {
+    return { brand_id: item.id, cate_id: result.id };
+  });
+
+  let [errCD, rsCD] = await Untils.to(
+    Category_Detail.bulkCreate(dataCD, { raw: true })
+  );
+  if (errCD) {
+    result = _error(2001, errCD);
+    return callback(2001, { data: result });
+  }
+
   return callback(null, result);
 };
 
@@ -181,12 +251,8 @@ Service.editCategory = async (params, callback) => {
     return callback(1000, { data: result });
   }
 
-  let { id, name } = params;
-  if (!id) {
-    result = _error(1000, err);
-    return callback(1000, { data: result });
-  }
-  if (!name) {
+  let { id, name, cate } = params;
+  if (!id || !name || !cate) {
     result = _error(1000, err);
     return callback(1000, { data: result });
   }
@@ -206,6 +272,26 @@ Service.editCategory = async (params, callback) => {
   [err, result] = await Untils.to(Category.update(data, where));
   if (err) {
     result = _error(2002, err);
+    return callback(2002, { data: result });
+  }
+
+  let dataCD = cate.map((item) => {
+    return { brand_id: item.id, cate_id: id };
+  });
+  let [errCD, rsCD] = await Untils.to(
+    Category_Detail.destroy({
+      where: {
+        cate_id: id,
+      },
+    })
+  );
+  if (errCD) {
+    let result = _error(2002, errCD);
+    return callback(2002, { data: result });
+  }
+  [errCD, rsCD] = await Untils.to(Category_Detail.bulkCreate(dataCD));
+  if (errCD) {
+    let result = _error(2002, errCD);
     return callback(2002, { data: result });
   }
 

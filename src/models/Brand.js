@@ -15,6 +15,10 @@ const Brand = db.sequelize.define(
       type: Sequelize.STRING,
       allowNull: false,
     },
+    name_without_unicode: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
     logo: {
       type: Sequelize.STRING,
       allowNull: false,

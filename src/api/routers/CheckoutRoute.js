@@ -6,6 +6,8 @@ const router = express.Router();
 const stripe = require("stripe")(process.env.KEY_SECRET_STRIPE);
 const moment = require("moment");
 const { QueryTypes, Op } = require("sequelize");
+const crypto = require("crypto");
+const https = require("https");
 
 const { sequelize } = require("../../config/connectDB");
 const db = require("../../config/connectDB");
@@ -42,101 +44,200 @@ router.post("/", authenticateToken, (req, res) => {
   });
 });
 
-router.post("/create-checkout-session", authenticateToken, async (req, res) => {
-  const params = req.body;
-  params.user = req.user;
-  let { user, userCheckout, price, discount, note, cartList } = params;
+router.post(
+  "/create-checkout-session",
+  authenticateToken,
+  async (req, response) => {
+    const params = req.body;
+    params.user = req.user;
+    let { user, userCheckout, price, discount, note, cartList, partner } =
+      params;
 
-  let errCartDe, rsCartDe;
-  [errCartDe, rsCartDe] = await Untils.to(
-    CartDetail.findAll({ where: { user_id: user.id }, raw: true })
-  );
-
-  for (cd of rsCartDe) {
-    let findProduct = {
-      where: {
-        id: cd.product_id,
-      },
-      raw: true,
-    };
-    let errP, rsP;
-    [errP, rsP] = await Untils.to(Product.findOne(findProduct));
-    if (errP) {
-      console.log(`find product error: ${errP}`);
-    }
-    rsP.image_link = Untils.linkImage + rsP.image_link;
-    cd.product = rsP;
-  }
-
-  //create order
-  let dataOrd = {
-    user_id: user.id,
-    discount: discount,
-    total: price,
-    status: 0,
-    note: note ? note : null,
-    user_checkout: userCheckout,
-  };
-
-  let [ecartDetail, rsCartDetail] = await Untils.to(
-    CartDetail.findAll({ where: { user_id: user.id, status: 0 }, raw: true })
-  );
-  if (ecartDetail) {
-    console.log(`find  cart details error user: ${user.id}`);
-  }
-  let products = [];
-  for (item of rsCartDetail) {
-    let [eP, rP] = await Untils.to(
-      Product.findOne({ where: { id: item.product_id }, raw: true })
+    let errCartDe, rsCartDe;
+    [errCartDe, rsCartDe] = await Untils.to(
+      CartDetail.findAll({ where: { user_id: user.id }, raw: true })
     );
-    if (eP) {
-      console.log("error find product");
-    }
-    item.name = rP.name;
-    item.image_link = Untils.linkImage + rP.image_link;
-  }
 
-  const customer = await stripe.customers.create({
-    metadata: {
-      userId: user.id,
-      userCheckout: JSON.stringify({
-        name: userCheckout.name,
-        address: userCheckout.address,
-        phone: userCheckout.phone,
-        email: userCheckout.email,
-      }),
-      user_id: user.id,
-    },
-  });
-
-  const line_items = cartList.map((item) => {
-    return {
-      price_data: {
-        currency: "vnd",
-        product_data: {
-          name: item.name,
-          images: [item.image_link],
-          description: note,
-          metadata: {
-            id: item.id,
-          },
+    for (cd of rsCartDe) {
+      let findProduct = {
+        where: {
+          id: cd.product_id,
         },
-        unit_amount: parseInt(item.price),
-      },
-      quantity: parseInt(item.qty),
+        raw: true,
+      };
+      let errP, rsP;
+      [errP, rsP] = await Untils.to(Product.findOne(findProduct));
+      if (errP) {
+        console.log(`find product error: ${errP}`);
+      }
+      rsP.image_link = Untils.linkImage + rsP.image_link;
+      cd.product = rsP;
+    }
+
+    //create order
+    let dataOrd = {
+      user_id: user.id,
+      discount: discount,
+      total: price,
+      status: 0,
+      note: note ? note : null,
+      user_checkout: userCheckout,
     };
-  });
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customer.id,
-    line_items: line_items,
-    mode: "payment",
-    success_url: `${process.env.CLIENT_URL}/order/`,
-    cancel_url: `${process.env.CLIENT_URL}/ecommerce/checkout`,
-  });
+    let [ecartDetail, rsCartDetail] = await Untils.to(
+      CartDetail.findAll({ where: { user_id: user.id, status: 0 }, raw: true })
+    );
+    if (ecartDetail) {
+      console.log(`find  cart details error user: ${user.id}`);
+    }
+    let products = [];
+    for (item of rsCartDetail) {
+      let [eP, rP] = await Untils.to(
+        Product.findOne({ where: { id: item.product_id }, raw: true })
+      );
+      if (eP) {
+        console.log("error find product");
+      }
+      item.name = rP.name;
+      item.image_link = Untils.linkImage + rP.image_link;
+    }
 
-  res.send({ url: session.url });
-});
+    const customer = await stripe.customers.create({
+      metadata: {
+        userId: user.id,
+        userCheckout: JSON.stringify({
+          name: userCheckout.name,
+          address: userCheckout.address,
+          phone: userCheckout.phone,
+          email: userCheckout.email,
+        }),
+        user_id: user.id,
+      },
+    });
+
+    if (partner === "momo") {
+      var partnerCode = "MOMO";
+      var accessKey = "F8BBA842ECF85";
+      var secretkey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
+      var requestId = partnerCode + new Date().getTime();
+      var orderId = requestId;
+      var orderInfo = "pay with MoMo";
+      var redirectUrl = `${process.env.CLIENT_URL}/order/`;
+      var ipnUrl = "https://callback.url/notify";
+      var amount = price - discount;
+      var requestType = "captureWallet";
+      var extraData = "";
+
+      var rawSignature =
+        "accessKey=" +
+        accessKey +
+        "&amount=" +
+        amount +
+        "&extraData=" +
+        extraData +
+        "&ipnUrl=" +
+        ipnUrl +
+        "&orderId=" +
+        orderId +
+        "&orderInfo=" +
+        orderInfo +
+        "&partnerCode=" +
+        partnerCode +
+        "&redirectUrl=" +
+        redirectUrl +
+        "&requestId=" +
+        requestId +
+        "&requestType=" +
+        requestType;
+
+      var signature = crypto
+        .createHmac("sha256", secretkey)
+        .update(rawSignature)
+        .digest("hex");
+
+      const requestBody = JSON.stringify({
+        partnerCode: partnerCode,
+        accessKey: accessKey,
+        requestId: requestId,
+        amount: amount,
+        orderId: orderId,
+        orderInfo: orderInfo,
+        redirectUrl: redirectUrl,
+        ipnUrl: ipnUrl,
+        extraData: extraData,
+        requestType: requestType,
+        signature: signature,
+        lang: "en",
+      });
+
+      const options = {
+        hostname: "test-payment.momo.vn",
+        port: 443,
+        path: "/v2/gateway/api/create",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(requestBody),
+        },
+      };
+
+      const req = https.request(options, (res) => {
+        // console.log(`Status: ${res.statusCode}`);
+        // console.log(`Headers: ${JSON.stringify(res.headers)}`);
+        res.setEncoding("utf8");
+        res.on("data", async (body) => {
+          // console.log("Body: ");
+          // console.log(body);
+          // console.log("payUrl: ");
+          // console.log(JSON.parse(body).payUrl);
+          // const payUrl = JSON.parse(body).payUrl;
+          const payUrl = Untils.safeParse(body).payUrl;
+          response.send({ url: payUrl });
+        });
+
+        res.on("end", () => {
+          console.log("No more data in response.");
+        });
+      });
+
+      req.on("error", (e) => {
+        console.log(`problem with request: ${e.message}`);
+      });
+
+      console.log("Sending....");
+      req.write(requestBody);
+      req.end();
+    } else {
+      const line_items = cartList.map((item) => {
+        return {
+          price_data: {
+            currency: "vnd",
+            product_data: {
+              name: item.name,
+              images: [item.image_link],
+              description: note,
+              metadata: {
+                id: item.id,
+              },
+            },
+            unit_amount: parseInt(item.price),
+          },
+          quantity: parseInt(item.qty),
+        };
+      });
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customer.id,
+        line_items: line_items,
+        mode: "payment",
+        success_url: `${process.env.CLIENT_URL}/order/`,
+        cancel_url: `${process.env.CLIENT_URL}/ecommerce/checkout`,
+      });
+
+      response.send({ url: session.url });
+    }
+  }
+);
 
 // This is your Stripe CLI webhook secret for testing your endpoint locally.
 let endpointSecret;
@@ -175,15 +276,6 @@ router.post(
       stripe.customers
         .retrieve(data.customer)
         .then(async (customer) => {
-          // let [errCartDe, rsCartDe] = await Untils.to(
-          //   CartDetail.findAll({
-          //     where: { user_id: customer.metadata.user_id },
-          //     raw: true,
-          //   })
-          // );
-          // if (errCartDe) {
-          //   console.log(`find Cart error: ${errCartDe}`);
-          // }
           let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
           let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
                               cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
@@ -217,8 +309,6 @@ router.post(
             user_checkout: customer.metadata.userCheckout,
             payment_intent: req.body.data.object.payment_intent,
           };
-
-          console.log(dataOrd, "dataOrd");
 
           let errOrd, rsOrd;
           [errOrd, rsOrd] = await Untils.to(Order.create(dataOrd));
@@ -624,5 +714,9 @@ router.post(
   }
 );
 //end Stripe Payment
+router.get("/webhookMomo", (req, res) => {
+  let params = req.query;
+  console.log(params,'12312301')
+});
 
 module.exports = router;

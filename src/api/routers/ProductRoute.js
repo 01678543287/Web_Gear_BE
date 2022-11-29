@@ -45,6 +45,25 @@ router.get("/getAllProductsNH", (req, res) => {
   });
 });
 
+router.get("/getProductListDKM", (req, res) => {
+  let params = req.body;
+  ServiceProduct.getProductListDKM(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
 router.get("/getAllProductsAdmin", (req, res) => {
   let params = req.body;
   ServiceProduct.getAllProductAdmin(params, (err, result) => {

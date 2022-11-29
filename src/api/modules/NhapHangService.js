@@ -171,6 +171,14 @@ Service.getNHDetail = async (params, callback) => {
   [errN, rsN] = await Untils.to(
     Nhap_Hang.findOne({ where: { id: nhaphang_id }, raw: true })
   );
+  if (errN) {
+    let result = _error(8400, errN);
+    return callback(8400, result);
+  }
+  if (!rsN) {
+    let result = _error(8402);
+    return callback(8402, result);
+  }
 
   let errA, rsA;
   [errA, rsA] = await Untils.to(

@@ -3,7 +3,7 @@ const db = require("../config/connectDB");
 const bcrypt = require("bcrypt");
 
 const Shipper = db.sequelize.define(
-  "shipper",
+  "shippers",
   {
     id: {
       type: Sequelize.UUID,
@@ -68,7 +68,7 @@ const Shipper = db.sequelize.define(
     },
   },
   {
-    tableName: "shipper",
+    tableName: "shippers",
   }
 );
 

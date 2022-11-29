@@ -62,8 +62,16 @@ module.exports.messages = {
 
   8400: "Nhap hang failed",
   8401: "Chi tiet Nhap hang failed",
+  8402: "Nhap hang now found",
 
   8500: "Tra hang failed",
+
+  8600: "admin not found",
+
+  8650: "DKMD create failed",
+  8651: "DKM create failed",
+
+  8700: "Rate not found",
 
   9998: "Upload files failed",
   9999: "Error",

@@ -4,6 +4,7 @@ const dateFormat = require("dateformat");
 const moment = require("moment");
 const { Op } = require("sequelize");
 var _ = require("lodash");
+const stripe = require("stripe")(process.env.KEY_SECRET_STRIPE);
 
 const db = require("../../config/connectDB");
 const Order = require("../../models/Order");
@@ -22,7 +23,7 @@ const _success = Untils._success;
 const MESSAGESCONFIG = require("../Messages");
 const MESSAGES = MESSAGESCONFIG.messages;
 const mailer = require("../sendEmail/sendEmail");
-const stripe = require("stripe")(process.env.KEY_SECRET_STRIPE);
+const InternalService = require("../modules/InternalService");
 
 let Service = {};
 
@@ -2244,7 +2245,9 @@ Service.cancel = async (params, callback) => {
     },
   };
 
-  let [errOrd, rsOrd] = await Untils.to(Order.update({ status: 6 }, where));
+  let [errOrd, rsOrd] = await Untils.to(
+    Order.update({ status: statusOrd ? 7 : 6 }, where)
+  );
   if (errOrd) {
     let result = _error(8202, errOrd);
     return callback(8202, { data: result });
@@ -2325,9 +2328,29 @@ Service.cancel = async (params, callback) => {
       return callback(8500, { data: result });
     }
 
-    const refund = await stripe.refunds.create({
-      payment_intent: statusOrd.payment_intent,
-    });
+    const orderRefund = statusOrd;
+
+    const MoMo = Untils.safeParse(orderRefund.payment_intent);
+
+    console.log(orderRefund, "ord");
+    // console.log(MoMo.partnerCode);
+    if (MoMo && MoMo.partnerCode === "MOMO") {
+      //refund momo
+      let params = {
+        amount: statusOrd.total - statusOrd.discount,
+        orderId: orderRefund.id,
+        transId: MoMo.trans_id,
+        requestId: MoMo.requestId,
+      };
+      let [errRFM, rsRFM] = await Untils.to(
+        Untils.cb2Promise(InternalService.refundMoMo, params)
+      );
+      // console.log(rsRFM, "refund momo 1122");
+    } else {
+      const refund = await stripe.refunds.create({
+        payment_intent: statusOrd.payment_intent,
+      });
+    }
   }
 
   mailer.sendMail(
@@ -2816,7 +2839,25 @@ Service.return = async (params, callback) => {
     return callback(8500, { data: result });
   }
 
-  if (statusOrd.payment_intent) {
+  const orderRefund = statusOrd;
+
+  const MoMo = Untils.safeParse(orderRefund.payment_intent);
+
+  if (MoMo && MoMo.partnerCode === "MOMO") {
+    //refund momo
+    let params = {
+      amount: _.sumBy(products, "amount"),
+      orderId: orderRefund.id,
+      transId: MoMo.trans_id,
+      requestId: MoMo.requestId,
+    };
+    let [errRFM, rsRFM] = await Untils.to(
+      Untils.cb2Promise(InternalService.refundMoMo, params)
+    );
+    // console.log(rsRFM, "refund momo 1122");
+  }
+
+  if (statusOrd.payment_intent && !MoMo && MoMo.partnerCode !== "MOMO") {
     const refund = await stripe.refunds.create({
       payment_intent: statusOrd.payment_intent,
       amount: _.sumBy(products, "amount"),

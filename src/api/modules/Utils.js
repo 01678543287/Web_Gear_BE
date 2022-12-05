@@ -78,6 +78,41 @@ let removeDuplicate = (arr) => {
   return [...set];
 };
 
+let cb2Promise = (fn, ...arg) => {
+  let p = new Promise((resolve, reject) => {
+    let _fnCb = (err, ...results) => {
+      if (err) return reject(err);
+
+      if (results && results.length == 1) return resolve(results[0]);
+      return resolve(results);
+    };
+
+    let _fnExec = null;
+    let _args = [];
+
+    if (Array.isArray(fn)) {
+      if (typeof fn[0] != "function") {
+        throw new Error("EUNKNOWARGS");
+      }
+
+      _fnExec = fn[0];
+      _args = Array.prototype.slice.call(fn, 1);
+    } else if (typeof fn == "function") {
+      _fnExec = fn;
+      _args = arg;
+    } else {
+      throw new Error("EUNKNOWARGS");
+    }
+
+    _args.push(_fnCb);
+
+    _fnExec.apply(_fnExec, _args);
+  });
+
+  return p;
+};
+
+
 // const linkImage = "https://storage.googleapis.com/cloudimage123/";
 const linkImage =
   "https://res.cloudinary.com/denztyim4/image/upload/v1661151316/DOANTHUCTAP/images/";
@@ -94,4 +129,5 @@ module.exports = {
   linkImageCloudinary,
   removeVietnameseTones,
   removeDuplicate,
+  cb2Promise,
 };

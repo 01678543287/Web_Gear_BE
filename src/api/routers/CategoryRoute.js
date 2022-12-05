@@ -43,10 +43,10 @@ router.post("/getCategory", (req, res) => {
   });
 });
 
-router.get("/getProductsByCate/:cate_id", (req, res) => {
+router.post("/getProductsByCateBrand", (req, res) => {
   let params = req.body;
-  params.cate_id = req.params.cate_id;
-  ServiceCategory.getProductsByCate(params, (err, result) => {
+  // params.cate_id = req.params.cate_id;
+  ServiceCategory.getProductsByCateBrand(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -102,22 +102,22 @@ router.put("/edit", authenticateAdminToken, (req, res) => {
 });
 
 router.delete("/delete", authenticateAdminToken, (req, res) => {
-    let params = req.body;
-    ServiceCategory.deleteCategory(params, (err, result) => {
-      result = result || {};
-      let { errorCode, message, data, statusCode } = result;
-      if (err)
-        return Response.Error(
-          req,
-          res,
-          errorCode,
-          message,
-          data,
-          statusCode,
-          err
-        );
-      return Response.Success(req, res, "success", result);
-    });
+  let params = req.body;
+  ServiceCategory.deleteCategory(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
 });
 
 module.exports = router;

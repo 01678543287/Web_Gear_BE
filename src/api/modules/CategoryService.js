@@ -94,27 +94,42 @@ Service.getCategory = async (params, callback) => {
   return callback(null, resultCB);
 };
 
-Service.getProductsByCate = async (params, callback) => {
-  let { cate_id } = params;
+Service.getProductsByCateBrand = async (params, callback) => {
+  let { cate_id, brand_id } = params;
   let products = [];
   let brands = [];
 
-  let [err, result] = await Untils.to(
-    Category.findOne({ where: { id: cate_id }, raw: true })
-  );
-  if (err) {
-    result = _error(2000, err);
-    return callback(2000, { data: result });
-  }
-  if (!result) {
-    let result = _error(2000);
-    return callback(2000, { data: result });
+  // console.log(params)
+  // let [err, result] = await Untils.to(
+  //   Category.findOne({ where: { id: cate_id }, raw: true })
+  // );
+  // if (err) {
+  //   result = _error(2000, err);
+  //   return callback(2000, { data: result });
+  // }
+  // if (!result) {
+  //   let result = _error(2000);
+  //   return callback(2000, { data: result });
+  // }
+
+  let findProduct = {
+    where: {
+      // cate_id: cate_id,
+      status: 0,
+    },
+    raw: true,
+  };
+
+  if (brand_id && cate_id) {
+    findProduct.where.brand_id = brand_id;
+    findProduct.where.cate_id = cate_id;
+  } else if (brand_id && !cate_id) {
+    findProduct.where.brand_id = brand_id;
+  } else if (cate_id && !brand_id) {
+    findProduct.where.cate_id = cate_id;
   }
 
-  let errP, rsP;
-  [errP, rsP] = await Untils.to(
-    Product.findAll({ where: { cate_id: cate_id, status: 0 }, raw: true })
-  );
+  let [errP, rsP] = await Untils.to(Product.findAll(findProduct));
   if (errP) {
     console.log(`find product error: ${errP}`);
   }

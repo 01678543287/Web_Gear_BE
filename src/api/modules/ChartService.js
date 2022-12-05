@@ -264,13 +264,13 @@ Service.transaction = async (params, callback) => {
 
   let queryTraHang = `SELECT DATE_PART('month', th.at) AS month , SUM(th.total) as total
                       FROM (
-                        SELECT th."createdAt" at, sum(od.price) total, th.id
+                      SELECT  th.id, th."createdAt" at, sum(od.price) total
                         FROM tra_hang th 
                         INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                         INNER JOIN public."order" o ON o.id = th.order_id
-                        INNER JOIN order_detail od ON thd.product_id = od.product_id
+                        INNER JOIN order_detail od ON o.id = od.order_id AND od.product_id = thd.product_id
                         GROUP BY th.id, at
-                      ) th
+                        ) th
                       WHERE DATE_PART('year', th.at) = ${year}
                       GROUP BY month`;
 
@@ -471,11 +471,11 @@ Service.exportTraHang = async (params, callback) => {
       moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
     let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
 
-    queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
                         FROM tra_hang th
                           INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                           INNER JOIN public."order" o ON o.id = th.order_id
-                          INNER JOIN order_detail od ON thd.product_id = od.product_id
+                          INNER JOIN order_detail od ON thd.product_id = od.product_id AND o.id = od.order_id
                           INNER JOIN users AS u ON o.user_id = u.id
                           LEFT JOIN admins AS a ON th.admin_id = a.id
                         WHERE th."createdAt" BETWEEN '${startAt}'::timestamp
@@ -486,11 +486,11 @@ Service.exportTraHang = async (params, callback) => {
       raw: true,
     });
   } else if (type === "month") {
-    queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
                         FROM tra_hang th
                           INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                           INNER JOIN public."order" o ON o.id = th.order_id
-                          INNER JOIN order_detail od ON thd.product_id = od.product_id
+                          INNER JOIN order_detail od ON thd.product_id = od.product_id AND o.id = od.order_id
                           INNER JOIN users AS u ON o.user_id = u.id
                           LEFT JOIN admins AS a ON th.admin_id = a.id
                         where DATE_PART('month', o."createdAt") BETWEEN ${from} AND ${to} 
@@ -501,11 +501,11 @@ Service.exportTraHang = async (params, callback) => {
       raw: true,
     });
   } else if (type === "quarter") {
-    queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
                       FROM tra_hang th
                         INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                         INNER JOIN public."order" o ON o.id = th.order_id
-                        INNER JOIN order_detail od ON thd.product_id = od.product_id
+                        INNER JOIN order_detail od ON thd.product_id = od.product_id AND o.id = od.order_id
                         INNER JOIN users AS u ON o.user_id = u.id
                         LEFT JOIN admins AS a ON th.admin_id = a.id
                       WHERE EXTRACT (QUARTER FROM o."createdAt") BETWEEN ${from} AND ${to}
@@ -516,11 +516,11 @@ Service.exportTraHang = async (params, callback) => {
       raw: true,
     });
   } else {
-    queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
                         FROM tra_hang th
                           INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                           INNER JOIN public."order" o ON o.id = th.order_id
-                          INNER JOIN order_detail od ON thd.product_id = od.product_id
+                          INNER JOIN order_detail od ON thd.product_id = od.product_id AND o.id = od.order_id
                           INNER JOIN users AS u ON o.user_id = u.id
                           LEFT JOIN admins AS a ON th.admin_id = a.id
                       where DATE_PART('year', o."createdAt") BETWEEN ${from}

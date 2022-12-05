@@ -8,6 +8,7 @@ const moment = require("moment");
 const { QueryTypes, Op } = require("sequelize");
 const crypto = require("crypto");
 const https = require("https");
+const request = require("request");
 
 const { sequelize } = require("../../config/connectDB");
 const db = require("../../config/connectDB");
@@ -43,6 +44,158 @@ router.post("/", authenticateToken, (req, res) => {
     return Response.Success(req, res, "success", result);
   });
 });
+
+router.post(
+  "/create-checkout-session-momo",
+  authenticateToken,
+  (req, response) => {
+    let params = req.body;
+    params.user = req.user;
+    // console.log(params)
+    // return;;
+    ServiceCheckout.checkoutMoMo(params, (err, result) => {
+      result = result || {};
+      let { errorCode, message, data, statusCode } = result;
+      if (err)
+        return Response.Error(
+          req,
+          response,
+          errorCode,
+          message,
+          data,
+          statusCode,
+          err
+        );
+      // return Response.Success(req, res, "success", result);
+      //redirectUrl MOMO
+      let {
+        user,
+        userCheckout,
+        price,
+        discount,
+        note,
+        code_voucher,
+        cartList,
+      } = params;
+      let { orderData } = result;
+
+      var partnerCode = "MOMO";
+      var accessKey = "F8BBA842ECF85";
+      var secretkey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
+      var requestId = partnerCode + new Date().getTime();
+      var orderId = orderData.id;
+      var orderInfo = "pay with MoMo";
+      var redirectUrl = `${process.env.CLIENT_URL}/order/`;
+      var ipnUrl = "https://callback.url/notify";
+      var amount = price - discount;
+      var requestType = "captureWallet";
+      var extraData = "";
+
+      var rawSignature =
+        "accessKey=" +
+        accessKey +
+        "&amount=" +
+        amount +
+        "&extraData=" +
+        extraData +
+        "&ipnUrl=" +
+        ipnUrl +
+        "&orderId=" +
+        orderId +
+        "&orderInfo=" +
+        orderInfo +
+        "&partnerCode=" +
+        partnerCode +
+        "&redirectUrl=" +
+        redirectUrl +
+        "&requestId=" +
+        requestId +
+        "&requestType=" +
+        requestType;
+
+      var signature = crypto
+        .createHmac("sha256", secretkey)
+        .update(rawSignature)
+        .digest("hex");
+
+      const requestBody = JSON.stringify({
+        partnerCode: partnerCode,
+        accessKey: accessKey,
+        requestId: requestId,
+        amount: amount,
+        orderId: orderId,
+        orderInfo: orderInfo,
+        redirectUrl: redirectUrl,
+        ipnUrl: ipnUrl,
+        extraData: extraData,
+        requestType: requestType,
+        signature: signature,
+        lang: "en",
+      });
+
+      // const options = {
+      //   hostname: "test-payment.momo.vn",
+      //   port: 443,
+      //   path: "/v2/gateway/api/create",
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     "Content-Length": Buffer.byteLength(requestBody),
+      //   },
+      // };
+
+      // const reqMOMO = https.request(options, (res) => {
+      //   // console.log(`Status: ${res.statusCode}`);
+      //   // console.log(`Headers: ${JSON.stringify(res.headers)}`);
+      //   res.setEncoding("utf8");
+      //   res.on("data", async (body) => {
+      //     // console.log("Body: ");
+      //     // console.log(body);
+      //     // console.log("payUrl: ");
+      //     // console.log(JSON.parse(body).payUrl);
+      //     // const payUrl = JSON.parse(body).payUrl;
+      //     let payUrl = Untils.safeParse(body);
+      //     if (payUrl) {
+      //       response.send({ url: payUrl.payUrl });
+      //     }
+      //   });
+
+      //   res.on("end", () => {
+      //     console.log("No more data in response.");
+      //   });
+      // });
+
+      // reqMOMO.on("error", (e) => {
+      //   console.log(`problem with request: ${e.message}`);
+      // });
+
+      // console.log("Sending....");
+      // reqMOMO.write(requestBody);
+      // reqMOMO.end();
+
+      request(
+        {
+          url: "https://test-payment.momo.vn/v2/gateway/api/create",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: requestBody,
+        },
+        (err, res, body) => {
+          // console.log(err, "err");
+          // console.log(res, "response");
+          // console.log(body, "body");
+          let payUrl = Untils.safeParse(body);
+          if (payUrl) {
+            response.send({ url: payUrl.payUrl });
+          }
+        }
+      );
+      // }
+    });
+  }
+);
 
 router.post(
   "/create-checkout-session",
@@ -115,127 +268,34 @@ router.post(
       },
     });
 
-    if (partner === "momo") {
-      var partnerCode = "MOMO";
-      var accessKey = "F8BBA842ECF85";
-      var secretkey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
-      var requestId = partnerCode + new Date().getTime();
-      var orderId = requestId;
-      var orderInfo = "pay with MoMo";
-      var redirectUrl = `${process.env.CLIENT_URL}/order/`;
-      var ipnUrl = "https://callback.url/notify";
-      var amount = price - discount;
-      var requestType = "captureWallet";
-      var extraData = "";
-
-      var rawSignature =
-        "accessKey=" +
-        accessKey +
-        "&amount=" +
-        amount +
-        "&extraData=" +
-        extraData +
-        "&ipnUrl=" +
-        ipnUrl +
-        "&orderId=" +
-        orderId +
-        "&orderInfo=" +
-        orderInfo +
-        "&partnerCode=" +
-        partnerCode +
-        "&redirectUrl=" +
-        redirectUrl +
-        "&requestId=" +
-        requestId +
-        "&requestType=" +
-        requestType;
-
-      var signature = crypto
-        .createHmac("sha256", secretkey)
-        .update(rawSignature)
-        .digest("hex");
-
-      const requestBody = JSON.stringify({
-        partnerCode: partnerCode,
-        accessKey: accessKey,
-        requestId: requestId,
-        amount: amount,
-        orderId: orderId,
-        orderInfo: orderInfo,
-        redirectUrl: redirectUrl,
-        ipnUrl: ipnUrl,
-        extraData: extraData,
-        requestType: requestType,
-        signature: signature,
-        lang: "en",
-      });
-
-      const options = {
-        hostname: "test-payment.momo.vn",
-        port: 443,
-        path: "/v2/gateway/api/create",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(requestBody),
-        },
-      };
-
-      const req = https.request(options, (res) => {
-        // console.log(`Status: ${res.statusCode}`);
-        // console.log(`Headers: ${JSON.stringify(res.headers)}`);
-        res.setEncoding("utf8");
-        res.on("data", async (body) => {
-          // console.log("Body: ");
-          // console.log(body);
-          // console.log("payUrl: ");
-          // console.log(JSON.parse(body).payUrl);
-          // const payUrl = JSON.parse(body).payUrl;
-          const payUrl = Untils.safeParse(body).payUrl;
-          response.send({ url: payUrl });
-        });
-
-        res.on("end", () => {
-          console.log("No more data in response.");
-        });
-      });
-
-      req.on("error", (e) => {
-        console.log(`problem with request: ${e.message}`);
-      });
-
-      console.log("Sending....");
-      req.write(requestBody);
-      req.end();
-    } else {
-      const line_items = cartList.map((item) => {
-        return {
-          price_data: {
-            currency: "vnd",
-            product_data: {
-              name: item.name,
-              images: [item.image_link],
-              description: note,
-              metadata: {
-                id: item.id,
-              },
+    const line_items = cartList.map((item) => {
+      return {
+        price_data: {
+          currency: "vnd",
+          product_data: {
+            name: item.name,
+            images: [item.image_link],
+            description: note,
+            metadata: {
+              id: item.id,
             },
-            unit_amount: parseInt(item.price),
           },
-          quantity: parseInt(item.qty),
-        };
-      });
+          unit_amount: parseInt(item.price),
+        },
+        quantity: parseInt(item.qty),
+      };
+    });
 
-      const session = await stripe.checkout.sessions.create({
-        customer: customer.id,
-        line_items: line_items,
-        mode: "payment",
-        success_url: `${process.env.CLIENT_URL}/order/`,
-        cancel_url: `${process.env.CLIENT_URL}/ecommerce/checkout`,
-      });
+    const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
+      line_items: line_items,
+      mode: "payment",
+      success_url: `${process.env.CLIENT_URL}/order/`,
+      cancel_url: `${process.env.CLIENT_URL}/ecommerce/checkout`,
+    });
 
-      response.send({ url: session.url });
-    }
+    response.send({ url: session.url });
+    // }
   }
 );
 
@@ -296,7 +356,7 @@ router.post(
             type: QueryTypes.SELECT,
             raw: true,
           });
-          console.log(cartQuery, "webhook cart detail");
+          // console.log(cartQuery, "webhook cart detail");
 
           let dataOrd = {
             user_id: customer.metadata.userId,
@@ -342,7 +402,6 @@ router.post(
             console.log(`create Order error: ${errCart}`);
           }
 
-          console.log(req.body.data, "data");
           //sendMail
           mailer.sendMail(
             req.body.data.object.customer_details.email,
@@ -714,9 +773,26 @@ router.post(
   }
 );
 //end Stripe Payment
-router.get("/webhookMomo", (req, res) => {
-  let params = req.query;
-  console.log(params,'12312301')
+
+router.post("/callbackMoMo", authenticateToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  // return;
+  ServiceCheckout.callbackMoMo(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
 });
 
 module.exports = router;

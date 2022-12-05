@@ -73,6 +73,9 @@ module.exports.messages = {
 
   8700: "Rate not found",
 
+  8800: "Payment failed",
+  8801: "Price order not true",
+
   9998: "Upload files failed",
   9999: "Error",
 };

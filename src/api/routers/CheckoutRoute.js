@@ -66,7 +66,9 @@ router.post(
           statusCode,
           err
         );
+
       // return Response.Success(req, res, "success", result);
+
       //redirectUrl MOMO
       let {
         user,
@@ -357,6 +359,50 @@ router.post(
             raw: true,
           });
           // console.log(cartQuery, "webhook cart detail");
+
+          //check qty product
+          // for (item of cartQuery) {
+          //   let [errPr, rsPr] = await Untils.to(
+          //     Product.findOne({
+          //       where: { id: item.id, qty: { [Op.gte]: item.qty } },
+          //       raw: true,
+          //     })
+          //   );
+          //   if (errPr) {
+          //     let result = _error(7000, errPr);
+          //     return callback(7000, { data: result });
+          //   }
+          //   if (!rsPr) {
+          //     let result = _error(7006);
+          //     return callback(7006, { data: result });
+          //   }
+          // }
+          // eachLimit(
+          //   cartQuery,
+          //   1,
+          //   async (item) => {
+          //     let [errPr, rsPr] = await Untils.to(
+          //       Product.findOne({
+          //         where: { id: item.id, qty: { [Op.gte]: item.qty } },
+          //         raw: true,
+          //       })
+          //     );
+          //     if (errPr) {
+          //       let result = _error(7000, err);
+          //       return callback(7000, { data: result });
+          //     }
+          //     if (!rsPr) {
+          //       let result = _error(7000, err);
+          //       return callback(7000, { data: result });
+          //     }
+          //   },
+          //   (err, result) => {
+          //     if (err) {
+          //       let resultRes = _error(8200, err);
+          //       return callback(8200, { data: resultRes });
+          //     }
+          //   }
+          // );
 
           let dataOrd = {
             user_id: customer.metadata.userId,
@@ -782,6 +828,7 @@ router.post("/callbackMoMo", authenticateToken, (req, res) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
+      
       return Response.Error(
         req,
         res,

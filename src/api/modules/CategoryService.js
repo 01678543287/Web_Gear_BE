@@ -161,59 +161,51 @@ Service.getProductsByCateBrand = async (params, callback) => {
   }
 
   let [errB, rsB] = await Untils.to(
-    Category_Detail.findAll({ where: { cate_id: cate_id }, raw: true })
+    Category_Detail.findAll({
+      where: { cate_id: cate_id ? cate_id : "" },
+      raw: true,
+    })
   );
   if (errB) {
     let result = _error(8000, errB);
     return callback(8000, { data: result });
   }
-  console.log(rsB);
-  // eachLimit(
-  //   rsB,
-  //   1,
-  //   async (item) => {
-  // let [errFB, rsFB] = await Untils.to(
-  //   Brand.findOne({ where: { id: item.brand_id }, raw: true })
-  // );
-  // if (errFB) {
-  //   console.log(errFB);
-  //   let result = _error(8000, errFB);
-  //   return callback(8000, { data: result });
-  // }
-  // console.log(rsFB);
-  // if (rsFB) {
-  //   let temp = {
-  //     id: rsFB.id,
-  //     name: rsFB.name,
-  //   };
-  //   brands.push(temp);
-  //     }
-  //   },
-  //   (err, result) => {
-  //     if (err) {
-  //       console.log(err);
-  //     }
-  //   }
-  // );
-  for (item of rsB) {
-    let [errFB, rsFB] = await Untils.to(
-      Brand.findOne({ where: { id: item.brand_id }, raw: true })
-    );
+  if (rsB && rsB.length > 0) {
+    for (item of rsB) {
+      let [errFB, rsFB] = await Untils.to(
+        Brand.findOne({ where: { id: item.brand_id }, raw: true })
+      );
+      if (errFB) {
+        console.log(errFB);
+        let result = _error(8000, errFB);
+        return callback(8000, { data: result });
+      }
+      if (rsFB) {
+        let temp = {
+          id: rsFB.id,
+          name: rsFB.name,
+        };
+        brands.push(temp);
+      }
+    }
+  } else {
+    let [errFB, rsFB] = await Untils.to(Brand.findAll({ raw: true }));
     if (errFB) {
       console.log(errFB);
       let result = _error(8000, errFB);
       return callback(8000, { data: result });
     }
     if (rsFB) {
-      let temp = {
-        id: rsFB.id,
-        name: rsFB.name,
-      };
-      brands.push(temp);
+      let temp = rsFB.map((item) => {
+        return {
+          id: item.id,
+          name: item.name,
+        };
+      });
+      brands = temp;
     }
   }
 
-  console.log(brands);
   let resultss = Untils._success(200);
   resultss.products = products;
   resultss.brands = brands;

@@ -1,5 +1,6 @@
 const { DateTime } = require("luxon");
 const { eachLimit } = require("async");
+const { QueryTypes, Op } = require("sequelize");
 
 const db = require("../../config/connectDB");
 const Promo = require("../../models/Promoes");
@@ -47,6 +48,50 @@ Service.checkout = async (params, callback) => {
     let result = _error(404);
     return callback(404, { data: result });
   }
+
+  //check qty product
+  // for (item of cartList) {
+  //   let [errPr, rsPr] = await Untils.to(
+  //     Product.findOne({
+  //       where: { id: item.id, qty: { [Op.gte]: item.qty } },
+  //       raw: true,
+  //     })
+  //   );
+  //   if (errPr) {
+  //     let result = _error(7000, errPr);
+  //     return callback(7000, { data: result });
+  //   }
+  //   if (!rsPr) {
+  //     let result = _error(7006);
+  //     return callback(7006, { data: result });
+  //   }
+  // }
+  // eachLimit(
+  //   cartList,
+  //   1,
+  //   async (item) => {
+  //     let [errPr, rsPr] = await Untils.to(
+  //       Product.findOne({
+  //         where: { id: item.id, qty: { [Op.gte]: item.qty } },
+  //         raw: true,
+  //       })
+  //     );
+  //     if (errPr) {
+  //       let result = _error(7000, err);
+  //       return callback(7000, { data: result });
+  //     }
+  //     if (!rsPr) {
+  //       let result = _error(7000, err);
+  //       return callback(7000, { data: result });
+  //     }
+  //   },
+  //   (err, result) => {
+  //     if (err) {
+  //       let resultRes = _error(8200, err);
+  //       return callback(8200, { data: resultRes });
+  //     }
+  //   }
+  // );
 
   //create order
   let dataOrd = {
@@ -499,6 +544,51 @@ Service.checkoutMoMo = async (params, callback) => {
     return callback(404, { data: result });
   }
 
+  //check qty product
+  // for (item of cartList) {
+  //   console.log("check");
+  //   let [errPr, rsPr] = await Untils.to(
+  //     Product.findOne({
+  //       where: { id: item.id, qty: { [Op.gte]: item.qty } },
+  //       raw: true,
+  //     })
+  //   );
+  //   if (errPr) {
+  //     let result = _error(7000, errPr);
+  //     return callback(7000, { data: result });
+  //   }
+  //   if (!rsPr) {
+  //     let result = _error(7006);
+  //     return callback(7006, { data: result });
+  //   }
+  // }
+  // eachLimit(
+  //   cartList,
+  //   1,
+  //   async (item) => {
+  //     let [errPr, rsPr] = await Untils.to(
+  //       Product.findOne({
+  //         where: { id: item.id, qty: { [Op.gte]: item.qty } },
+  //         raw: true,
+  //       })
+  //     );
+  //     if (errPr) {
+  //       let result = _error(7000, err);
+  //       return callback(7000, { data: result });
+  //     }
+  //     if (!rsPr) {
+  //       let result = _error(7000, err);
+  //       return callback(7000, { data: result });
+  //     }
+  //   },
+  //   (err, result) => {
+  //     if (err) {
+  //       let resultRes = _error(8200, err);
+  //       return callback(8200, { data: resultRes });
+  //     }
+  //   }
+  // );
+
   //create order
   let dataOrd = {
     user_id: user.id,
@@ -931,6 +1021,9 @@ Service.callbackMoMo = async (params, callback) => {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
+
+  amount = parseInt(amount);
+
   if (resultCode !== "0") {
     let result = _error(8800);
     return callback(8800, { data: result });
@@ -948,7 +1041,9 @@ Service.callbackMoMo = async (params, callback) => {
     return callback(8201, { data: result });
   }
 
-  if (rsO.total !== amount) {
+  const amountCallback = parseInt(rsO.total) - parseInt(rsO.discount);
+
+  if (amountCallback !== amount) {
     let result = _error(8801);
     return callback(8801, { data: result });
   }

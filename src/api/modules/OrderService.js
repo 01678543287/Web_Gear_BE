@@ -580,7 +580,8 @@ Service.changeStatusOrder = async (params, callback) => {
         ? 4
         : 5,
     admin_id: user.id,
-    shipper_id: status === 1 && shipper_id ? shipper_id : null,
+    shipper_id:
+      (status === 1 || status === 3) && shipper_id ? shipper_id : null,
   };
 
   let errOrd, rsOrd;
@@ -607,7 +608,6 @@ Service.changeStatusOrder = async (params, callback) => {
   //   }
   // }
 
-  errOrd, rsOrd;
   [errOrd, rsOrd] = await Untils.to(Order.findOne(whereOrd));
   if (errOrd) {
     let result = _error(8201, errOrd);
@@ -979,8 +979,16 @@ Service.changeStatusOrder = async (params, callback) => {
 
   // console.log(rsOrd, "ord");
 
+  let [errOD, rsOD] = await Untils.to(
+    Order_Detail.findAll({ where: { order_id: orderId }, raw: true })
+  );
+  if (errOD) {
+    let result = _error(8203, errOD);
+    return callback(8203, { data: result });
+  }
+
   if (dataOrd.status === 5) {
-    for (let item of rsOrd.products) {
+    for (let item of rsOD) {
       // console.log(item)
       let errPR, rsPR;
       [errPR, rsPR] = await Untils.to(
@@ -996,6 +1004,32 @@ Service.changeStatusOrder = async (params, callback) => {
         );
       }
     }
+
+    // const orderRefund = statusOrd;
+    const orderRefund = rsOrd;
+
+    const MoMo = Untils.safeParse(orderRefund.payment_intent);
+
+    console.log(orderRefund, "ord");
+    // console.log(MoMo.partnerCode);
+    if (MoMo && MoMo.partnerCode === "MOMO") {
+      //refund momo
+      let params = {
+        amount: rsOrd.total - rsOrd.discount,
+        orderId: orderRefund.id,
+        transId: MoMo.trans_id,
+        requestId: MoMo.requestId,
+      };
+      let [errRFM, rsRFM] = await Untils.to(
+        Untils.cb2Promise(InternalService.refundMoMo, params)
+      );
+      // console.log(rsRFM, "refund momo 1122");
+    } else {
+      const refund = await stripe.refunds.create({
+        payment_intent: rsOrd.payment_intent,
+      });
+    }
+
     mailer.sendMail(
       rsOrd.user_checkout.email,
       "Order Failed",
@@ -1370,6 +1404,8 @@ Service.changeStatusOrderShipper = async (params, callback) => {
   }
 
   let { user, status, orderId, shipper_id } = params;
+  // console.log(params, "params");
+  // return;
 
   if (!user) {
     let result = _error(403);
@@ -1400,7 +1436,7 @@ Service.changeStatusOrderShipper = async (params, callback) => {
           : 5,
       // admin_id: user.id,
     };
-  } else {
+  } else if (status === 5) {
     dataOrd = {
       status:
         status === 0
@@ -1411,7 +1447,7 @@ Service.changeStatusOrderShipper = async (params, callback) => {
           ? 4
           : 5,
       // admin_id: user.id,
-      shipper_id: status === 1 && shipper_id ? shipper_id : null,
+      // shipper_id: user.id,
     };
   }
 
@@ -1792,8 +1828,16 @@ Service.changeStatusOrderShipper = async (params, callback) => {
     );
   }
 
+  let [errOD, rsOD] = await Untils.to(
+    Order_Detail.findAll({ where: { order_id: orderId }, raw: true })
+  );
+  if (errOD) {
+    let result = _error(8203, errOD);
+    return callback(8203, { data: result });
+  }
+
   if (dataOrd.status === 5) {
-    for (let item of rsOrd.products) {
+    for (let item of rsOD) {
       let errPR, rsPR;
       [errPR, rsPR] = await Untils.to(
         Product.findOne({ where: { id: item.product_id }, raw: true })
@@ -1807,6 +1851,31 @@ Service.changeStatusOrderShipper = async (params, callback) => {
         );
       }
     }
+
+    const orderRefund = rsOrd;
+
+    const MoMo = Untils.safeParse(orderRefund.payment_intent);
+
+    console.log(orderRefund, "ord");
+    // console.log(MoMo.partnerCode);
+    if (MoMo && MoMo.partnerCode === "MOMO") {
+      //refund momo
+      let params = {
+        amount: rsOrd.total - rsOrd.discount,
+        orderId: orderRefund.id,
+        transId: MoMo.trans_id,
+        requestId: MoMo.requestId,
+      };
+      let [errRFM, rsRFM] = await Untils.to(
+        Untils.cb2Promise(InternalService.refundMoMo, params)
+      );
+      // console.log(rsRFM, "refund momo 1122");
+    } else {
+      const refund = await stripe.refunds.create({
+        payment_intent: rsOrd.payment_intent,
+      });
+    }
+
     mailer.sendMail(
       rsOrd.user_checkout.email,
       "Order Failed",
@@ -2203,6 +2272,36 @@ Service.setRate = async (params, callback) => {
   if (errRate) {
     let result = _error(8201, errRate);
     return callback(8201, { data: result });
+  }
+
+  let result = _success(200);
+  return callback(null, result);
+};
+
+Service.deleteCmt = async (params, callback) => {
+  // console.log(params);
+  // return;
+  if (!params) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let { cmt_id, user } = params;
+
+  if (!user) {
+    let result = _error(403);
+    return callback(403, { data: result });
+  }
+
+  if (!cmt_id) {
+    let result = _error(1000);
+    return callback(1000, { data: result });
+  }
+
+  let [errC, rsC] = await Untils.to(Rate.destroy({ where: { id: cmt_id } }));
+  if (errC) {
+    let result = _error(8701, errC);
+    return callback(8701, { data: result });
   }
 
   let result = _success(200);
@@ -2857,7 +2956,7 @@ Service.return = async (params, callback) => {
     // console.log(rsRFM, "refund momo 1122");
   }
 
-  if (statusOrd.payment_intent && !MoMo && MoMo.partnerCode !== "MOMO") {
+  if (statusOrd.payment_intent && !MoMo) {
     const refund = await stripe.refunds.create({
       payment_intent: statusOrd.payment_intent,
       amount: _.sumBy(products, "amount"),

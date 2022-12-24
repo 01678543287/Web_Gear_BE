@@ -24,7 +24,7 @@ const MESSAGES = MESSAGESCONFIG.messages;
 
 let Service = {};
 
-Service.createAdmin = async (params, callback) => {
+Service.createShipper = async (params, callback) => {
   let {
     name,
     email,
@@ -38,8 +38,6 @@ Service.createAdmin = async (params, callback) => {
     home_town,
   } = params;
 
-  // console.log(params, "pr=0==0=0");
-  // return;
   if (!email) {
     let result = _error(1000);
     return callback(1000, { data: result });
@@ -76,7 +74,7 @@ Service.createAdmin = async (params, callback) => {
   };
 
   let result, err;
-  [err, result] = await Untils.to(Admin.create(dataUser, { raw: true }));
+  [err, result] = await Untils.to(Shipper.create(dataUser, { raw: true }));
 
   if (err) {
     console.log(err);
@@ -396,7 +394,7 @@ Service.createAdmin = async (params, callback) => {
 
                               <div align="center">
                                 <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; border-collapse: collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;font-family:'Cabin',sans-serif;"><tr><td style="font-family:'Cabin',sans-serif;" align="center"><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="" style="height:46px; v-text-anchor:middle; width:235px;" arcsize="8.5%" stroke="f" fillcolor="#ff6600"><w:anchorlock/><center style="color:#FFFFFF;font-family:'Cabin',sans-serif;"><![endif]-->
-                                <a href="${process.env.CLIENT_URL}/admin/session/reset-password?token=${token}" target="_blank" style="box-sizing: border-box;display: inline-block;font-family:'Cabin',sans-serif;text-decoration: none;-webkit-text-size-adjust: none;text-align: center;color: #FFFFFF; background-color: #ff6600; border-radius: 4px;-webkit-border-radius: 4px; -moz-border-radius: 4px; width:auto; max-width:100%; overflow-wrap: break-word; word-break: break-word; word-wrap:break-word; mso-border-alt: none;">
+                                <a href="${process.env.CLIENT_URL}/shipper/session/reset-password?token=${token}" target="_blank" style="box-sizing: border-box;display: inline-block;font-family:'Cabin',sans-serif;text-decoration: none;-webkit-text-size-adjust: none;text-align: center;color: #FFFFFF; background-color: #ff6600; border-radius: 4px;-webkit-border-radius: 4px; -moz-border-radius: 4px; width:auto; max-width:100%; overflow-wrap: break-word; word-break: break-word; word-wrap:break-word; mso-border-alt: none;">
                                   <span style="display:block;padding:14px 44px 13px;line-height:120%;"><span style="font-size: 16px; line-height: 19.2px;"><strong><span style="line-height: 19.2px; font-size: 16px;">XÁC NHẬN</span></strong>
                                   </span>
                                   </span>
@@ -506,7 +504,7 @@ Service.createAdmin = async (params, callback) => {
     email: result.email,
     address: result.address,
     phone: result.phone,
-    role: "ADMIN",
+    role: "SHIPPER",
   };
 
   const accessToken = jwt.sign(dataToken, process.env.ACCESS_TOKEN_SECRET, {
@@ -672,7 +670,7 @@ Service.lock = async (params, callback) => {
 
   let err, checkExist;
   [err, checkExist] = await Untils.to(
-    Admin.findOne({
+    Shipper.findOne({
       where: {
         id: params.user_id,
       },
@@ -694,7 +692,7 @@ Service.lock = async (params, callback) => {
 
   let errLock, rsLock;
   [errLock, rsLock] = await Untils.to(
-    Admin.update(dataUpdate, {
+    Shipper.update(dataUpdate, {
       where: { id: params.user_id },
     })
   );
@@ -714,7 +712,7 @@ Service.verify = async (params, callback) => {
 
   let errrU, rsU;
   [errrU, rsU] = await Untils.to(
-    Admin.findOne({ where: { token: token }, raw: true })
+    Shipper.findOne({ where: { token: token }, raw: true })
   );
   if (errrU) {
     let result = _error(3001, errrU);
@@ -736,15 +734,12 @@ Service.changePassword = async (params, callback) => {
 
   let { password, confirm_password, token } = params;
 
-  // console.log(password, "p");
-  // console.log(confirm_password, "cp");
-
   if (password === confirm_password) {
     const salt = await bcrypt.genSaltSync(10, "a");
     password = bcrypt.hashSync(password, salt);
     let errU, rsU;
     [errU, rsU] = await Untils.to(
-      Admin.update(
+      Shipper.update(
         { password: password, token: "0" },
         { where: { token: token } }
       )
@@ -758,18 +753,6 @@ Service.changePassword = async (params, callback) => {
     return callback(3007, { data: result });
   }
 
-  // let errrU, rsU;
-  // [errrU, rsU] = await Untils.to(
-  //   User.findOne({ where: { token: token }, raw: true })
-  // );
-  // if (errrU) {
-  //   let result = _error(3001, errrU);
-  //   return callback(3001, { data: result });
-  // }
-  // if (!rsU) {
-  //   let result = _error(3001);
-  //   return callback(3001, { data: result });
-  // }
   let result = _success(200);
   return callback(null, result);
 };
@@ -787,7 +770,7 @@ Service.forgetPassword = async (params, callback) => {
 
   let errrU, rsU;
   [errrU, rsU] = await Untils.to(
-    Admin.findOne({ where: { email: email }, raw: true })
+    Shipper.findOne({ where: { email: email }, raw: true })
   );
   if (errrU) {
     let result = _error(3001, errrU);
@@ -802,7 +785,7 @@ Service.forgetPassword = async (params, callback) => {
   token = bcrypt.hashSync(email, salt);
 
   [errrU, rsU] = await Untils.to(
-    Admin.update({ token: token }, { where: { email: email } })
+    Shipper.update({ token: token }, { where: { email: email } })
   );
   if (errrU) {
     let result = _error(3006, errrU);
@@ -1074,7 +1057,7 @@ Service.forgetPassword = async (params, callback) => {
                             <td style="overflow-wrap:break-word;word-break:break-word;padding:0px 10px 31px;font-family:'Cabin',sans-serif;" align="left">
 
                               <div style="color: #e5eaf5; line-height: 140%; text-align: center; word-wrap: break-word;">
-                                <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 28px; line-height: 39.2px;"><strong><span style="line-height: 39.2px; font-size: 28px;">Xác nhận để thay đổi mật khẩu</span></strong>
+                                <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 28px; line-height: 39.2px;"><strong><span style="line-height: 39.2px; font-size: 28px;">Xác nhận để đặt mật khẩu</span></strong>
                                   </span>
                                 </p>
                               </div>
@@ -1130,7 +1113,7 @@ Service.forgetPassword = async (params, callback) => {
 
                               <div align="center">
                                 <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-spacing: 0; border-collapse: collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;font-family:'Cabin',sans-serif;"><tr><td style="font-family:'Cabin',sans-serif;" align="center"><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="" style="height:46px; v-text-anchor:middle; width:235px;" arcsize="8.5%" stroke="f" fillcolor="#ff6600"><w:anchorlock/><center style="color:#FFFFFF;font-family:'Cabin',sans-serif;"><![endif]-->
-                                <a href="${process.env.CLIENT_URL}/admin/session/reset-password?token=${token}" target="_blank" style="box-sizing: border-box;display: inline-block;font-family:'Cabin',sans-serif;text-decoration: none;-webkit-text-size-adjust: none;text-align: center;color: #FFFFFF; background-color: #ff6600; border-radius: 4px;-webkit-border-radius: 4px; -moz-border-radius: 4px; width:auto; max-width:100%; overflow-wrap: break-word; word-break: break-word; word-wrap:break-word; mso-border-alt: none;">
+                                <a href="${process.env.CLIENT_URL}/shipper/session/reset-password?token=${token}" target="_blank" style="box-sizing: border-box;display: inline-block;font-family:'Cabin',sans-serif;text-decoration: none;-webkit-text-size-adjust: none;text-align: center;color: #FFFFFF; background-color: #ff6600; border-radius: 4px;-webkit-border-radius: 4px; -moz-border-radius: 4px; width:auto; max-width:100%; overflow-wrap: break-word; word-break: break-word; word-wrap:break-word; mso-border-alt: none;">
                                   <span style="display:block;padding:14px 44px 13px;line-height:120%;"><span style="font-size: 16px; line-height: 19.2px;"><strong><span style="line-height: 19.2px; font-size: 16px;">XÁC NHẬN</span></strong>
                                   </span>
                                   </span>

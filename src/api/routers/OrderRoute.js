@@ -220,6 +220,26 @@ router.post("/setRateOrderDetail", authenticateToken, (req, res) => {
   });
 });
 
+router.post("/deleteCmt", authenticateAdminToken, (req, res) => {
+  let params = req.body;
+  params.user = req.user;
+  ServiceOrder.deleteCmt(params, (err, result) => {
+    result = result || {};
+    let { errorCode, message, data, statusCode } = result;
+    if (err)
+      return Response.Error(
+        req,
+        res,
+        errorCode,
+        message,
+        data,
+        statusCode,
+        err
+      );
+    return Response.Success(req, res, "success", result);
+  });
+});
+
 router.post("/cancel", authenticateToken, (req, res) => {
   let params = req.body;
   params.user = req.user;

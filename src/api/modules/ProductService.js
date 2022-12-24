@@ -108,6 +108,7 @@ Service.getAllProductNH = async (params, callback) => {
   let errProduct, resultProduct;
   [errProduct, resultProduct] = await Untils.to(
     Product.findAll({
+      where: { status: { [Op.in]: [0, 1] } },
       order: [["createdAt", "DESC"]],
       raw: true,
     })
@@ -181,6 +182,7 @@ Service.getAllProductAdmin = async (params, callback) => {
   let errProduct, resultProduct;
   [errProduct, resultProduct] = await Untils.to(
     Product.findAll({
+      where: { status: { [Op.in]: [0, 1] } },
       order: [["createdAt", "DESC"]],
       raw: true,
     })
@@ -503,7 +505,8 @@ Service.deleteProduct = async (params, callback) => {
   }
 
   let dataProduct = {
-    status: rsProduct.status && rsProduct.status === 1 ? 0 : 1,
+    status: 2,
+    // rsProduct.status && rsProduct.status === 1 ? 0 : 1,
   };
 
   [errProduct, rsProduct] = await Untils.to(Product.update(dataProduct, where));

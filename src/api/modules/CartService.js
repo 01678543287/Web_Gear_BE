@@ -27,7 +27,8 @@ Service.addToCart = async (params, callback) => {
     let result = _error(1000);
     return callback(1000, { data: result });
   }
-  console.log(params, "");
+  console.log(params);
+
   let { product_id, user, type, qty, currentQty } = params;
 
   if (!product_id) {
@@ -43,6 +44,15 @@ Service.addToCart = async (params, callback) => {
     },
     raw: true,
   };
+
+  // if (type === 1) {
+  //   findProduct.where.qty = { [Op.gt]: 0 };
+  // } else if (type === 2) {
+  //   findProduct.where.qty = { [Op.gte]: qty };
+  // } else if (type === 0) {
+  //   findProduct.where.qty = { [Op.gte]: 0 };
+  // }
+
   let [errProduct, rsProduct] = await Untils.to(Product.findOne(findProduct));
   if (errProduct) {
     let result = _error(7000, errProduct);
@@ -53,7 +63,24 @@ Service.addToCart = async (params, callback) => {
     return callback(7000, { data: result });
   }
 
-  if (qty > rsProduct.qty) {
+  // console.log(rsProduct, "rsProduct");
+
+  // if (type === 1) {
+  //   qty = qty ? qty : 0;
+  //   let sum = qty + currentQty;
+  //   if (rsProduct.qty < sum) {
+  //     let result = _error(7006);
+  //     return callback(7006, { data: result });
+  //   }
+  // } else if (type === 2) {
+  //   let sum = qty;
+  //   if (rsProduct.qty < sum) {
+  //     let result = _error(7006);
+  //     return callback(7006, { data: result });
+  //   }
+  // }
+
+  if (qty > rsProduct.qty + currentQty) {
     let result = _error(8104);
     return callback(8104, { data: result });
   }
@@ -128,8 +155,8 @@ Service.addToCart = async (params, callback) => {
       },
       raw: true,
     };
-    let errCECD, rsCECD;
-    [errCECD, rsCECD] = await Untils.to(
+
+    let [errCECD, rsCECD] = await Untils.to(
       Cart_Detail.findOne(checkExistProductInCartDetail)
     );
     if (errCECD) {
@@ -179,6 +206,21 @@ Service.addToCart = async (params, callback) => {
 
   let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
   let cart = {};
+  // let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
+  //                           cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
+  //                         FROM products p
+  //                           INNER JOIN cart_detail cd ON p.id = cd.product_id
+  //                           LEFT JOIN (
+  //                             SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
+  //                             FROM dot_khuyen_mai km
+  //                             INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
+  //                             WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
+  //                             AND km."end_At" >= '${nowDate}'
+  //                             GROUP BY cdkm.product_id
+  //                           ) dkm ON dkm.product_id = p.id
+  //                         WHERE cd.user_id = '${user.id}'
+  //                           AND p.status = 0
+  //                         GROUP BY p.id, cd.qty`;
   let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
                             cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
                           FROM products p 
@@ -187,13 +229,14 @@ Service.addToCart = async (params, callback) => {
                               SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
                               FROM dot_khuyen_mai km 
                               INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
-                              WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
-                              AND km."end_At" >= '${nowDate}'
+                              WHERE km.status = 0 AND km."start_At" <= NOW()
+                              AND km."end_At" >= NOW()
                               GROUP BY cdkm.product_id
                             ) dkm ON dkm.product_id = p.id
                           WHERE cd.user_id = '${user.id}'
                             AND p.status = 0
                           GROUP BY p.id, cd.qty`;
+
   let cartQuery = await db.sequelize.query(queryProductCart, {
     type: QueryTypes.SELECT,
     raw: true,
@@ -225,6 +268,21 @@ Service.getCartForUser = async (params, callback) => {
     let nowDate = moment().utcOffset(420).format("YYYY-MM-DD HH:mm:ss");
 
     let cart = {};
+    // let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
+    //                           cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
+    //                         FROM products p
+    //                           INNER JOIN cart_detail cd ON p.id = cd.product_id
+    //                           LEFT JOIN (
+    //                             SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
+    //                             FROM dot_khuyen_mai km
+    //                             INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
+    //                             WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
+    //                             AND km."end_At" >= '${nowDate}'
+    //                             GROUP BY cdkm.product_id
+    //                           ) dkm ON dkm.product_id = p.id
+    //                         WHERE cd.user_id = '${user.id}'
+    //                           AND p.status = 0
+    //                         GROUP BY p.id, cd.qty`;
     let queryProductCart = `SELECT p.id, p.name, (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 price, p.qty as qty_product, p.image_link,
                               cd.qty, cd.qty * (p.price * (100 - (COALESCE( MAX(dkm.value), 0 ))))/100 as total
                             FROM products p 
@@ -233,8 +291,8 @@ Service.getCartForUser = async (params, callback) => {
                                 SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
                                 FROM dot_khuyen_mai km 
                                 INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
-                                WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
-                                AND km."end_At" >= '${nowDate}'
+                                WHERE km.status = 0 AND km."start_At" <= NOW()
+                                AND km."end_At" >= NOW()
                                 GROUP BY cdkm.product_id
                               ) dkm ON dkm.product_id = p.id
                             WHERE cd.user_id = '${user.id}'
@@ -244,7 +302,9 @@ Service.getCartForUser = async (params, callback) => {
       type: QueryTypes.SELECT,
       raw: true,
     });
+
     console.log(cartQuery, "cart query");
+
     cart.totalPrice = 0;
     cart.countProduct = 0;
     for (const product of cartQuery) {
@@ -338,8 +398,8 @@ Service.deleteProductForCart = async (params, callback) => {
                               SELECT  MAX(cdkm.value) AS "value", cdkm.product_id
                               FROM dot_khuyen_mai km 
                               INNER JOIN chi_tiet_dot_khuyen_mai cdkm ON km.id = cdkm.dotkhuyenmai_id
-                              WHERE km.status = 0 AND km."start_At" <= '${nowDate}'
-                              AND km."end_At" >= '${nowDate}'
+                              WHERE km.status = 0 AND km."start_At" <= NOW()
+                              AND km."end_At" >= NOW()
                               GROUP BY cdkm.product_id
                             ) dkm ON dkm.product_id = p.id
                           WHERE cd.user_id = '${user.id}'

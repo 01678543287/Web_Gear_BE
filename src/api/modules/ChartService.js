@@ -150,7 +150,6 @@ Service.order = async (params, callback) => {
                   GROUP BY month`;
   let THQuery = await db.sequelize.query(queryTH, {
     type: QueryTypes.SELECT,
-    raw: true,
   });
   let chartTH = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (const item of THQuery) {
@@ -234,6 +233,10 @@ Service.exportOrder = async (params, callback) => {
       guest.trang_thai = "Đã hoàn thành";
     } else if (guest.trang_thai === 5) {
       guest.trang_thai = "Đơn hàng lỗi";
+    } else if (guest.trang_thai === 6) {
+      guest.trang_thai = "Huỷ đơn";
+    } else if (guest.trang_thai === 7) {
+      guest.trang_thai = "Trả hàng";
     }
   });
 
@@ -249,7 +252,7 @@ Service.transaction = async (params, callback) => {
     !params.year || params.year === "undefined" || !isNumber(params.year)
       ? currentYear
       : params.year;
-  let queryAmountUser = `SELECT DATE_PART('month', "createdAt") AS month , SUM(total) as total
+  let queryAmountUser = `SELECT DATE_PART('month', "createdAt") AS month , SUM(total - discount) as total
                         FROM public."order" 
                         WHERE (status = 4 OR status = 7) AND DATE_PART('year', "createdAt") = ${year}
                         GROUP BY month`;
@@ -264,7 +267,7 @@ Service.transaction = async (params, callback) => {
 
   let queryTraHang = `SELECT DATE_PART('month', th.at) AS month , SUM(th.total) as total
                       FROM (
-                      SELECT  th.id, th."createdAt" at, sum(od.price) total
+                      SELECT  th.id, th."createdAt" at, sum(od.price * thd.qty) total
                         FROM tra_hang th 
                         INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                         INNER JOIN public."order" o ON o.id = th.order_id
@@ -297,42 +300,31 @@ Service.exportTransaction = async (params, callback) => {
   let queryAmountUser, queryNH;
   let userQuery, NHQuery;
 
-  // let startAt = moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
-  // let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
-
-  // let queryAmountUser = `select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
-  //                       from public."order"
-  //                       where (status = 4 OR status = 7) AND "createdAt" BETWEEN '${startAt}'::timestamp
-  //                                         AND '${now}'::timestamp
-  //                       group by ngay
-  //                       order by ngay DESC`;
-  // let userQuery = await db.sequelize.query(queryAmountUser, {
-  //   type: QueryTypes.SELECT,
-  //   raw: true,
-  // });
-
-  // let queryNH = `select SUM(total) as chi_phi , to_char("createdAt", 'DD/MM/YYYY') as ngay
-  // from nhap_hang
-  //                        where "createdAt" BETWEEN '${startAt}'::timestamp
-  //                                          AND '${now}'::timestamp
-  //                        group by ngay
-  //                        order by ngay DESC`;
-  // let NHQuery = await db.sequelize.query(queryNH, {
-  //   type: QueryTypes.SELECT,
-  //   raw: true,
-  // });
-
   if (type === "day") {
     let startAt =
       moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
     let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
 
-    queryAmountUser = `select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
-                      from public."order"
-                      where (status = 4 OR status = 7) AND "createdAt" BETWEEN '${startAt}'::timestamp
-                                        AND '${now}'::timestamp
-                      group by ngay
-                      order by ngay DESC`;
+    queryAmountUser = `SELECT COALESCE( dt.doanh_thu, 0 ) doanh_thu, COALESCE( a.total, 0 ) hoan_tien, COALESCE( a.ngay, dt.ngay ) ngay
+                FROM 
+                  (Select SUM(total - discount) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                  from public."order" o
+                  WHERE (status = 4 OR status = 7) AND "createdAt" BETWEEN '${startAt}'::timestamp
+                  AND '${now}'::timestamp
+                  group by ngay
+                  order by ngay DESC) dt 
+                FULL JOIN 
+                  (SELECT sum(od.price * thd.qty) total, to_char(th."createdAt", 'DD/MM/YYYY') as ngay
+                  FROM tra_hang th
+                    INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                    INNER JOIN public."order" o ON o.id = th.order_id
+                    INNER JOIN order_detail od ON thd.product_id = od.product_id AND o.id = od.order_id
+                    WHERE th."createdAt" BETWEEN '${startAt}'::timestamp
+                    AND '${now}'::timestamp
+                    GROUP BY ngay
+                    ORDER BY ngay DESC
+                  ) a ON a.ngay = dt.ngay
+                      ORDER BY ngay DESC`;
     userQuery = await db.sequelize.query(queryAmountUser, {
       type: QueryTypes.SELECT,
       raw: true,
@@ -349,12 +341,26 @@ Service.exportTransaction = async (params, callback) => {
       raw: true,
     });
   } else if (type === "month") {
-    queryAmountUser = `select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
-                      from public."order" o
-                      where (status = 4 OR status = 7) AND DATE_PART('month', o."createdAt") BETWEEN ${from} AND ${to} 
-                          AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
-                      group by ngay
-                      order by ngay DESC`;
+    queryAmountUser = `SELECT COALESCE( dt.doanh_thu, 0 ) doanh_thu, COALESCE( a.total, 0 ) hoan_tien, COALESCE( a.ngay, dt.ngay ) ngay
+                FROM 
+                  (Select SUM(total - discount) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                  from public."order" o
+                  WHERE (status = 4 OR status = 7) AND DATE_PART('month', o."createdAt") BETWEEN ${from} AND ${to} 
+                  AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                  group by ngay
+                  order by ngay DESC) dt 
+                FULL JOIN 
+                  (SELECT sum(od.price * thd.qty) total, to_char(th."createdAt", 'DD/MM/YYYY') as ngay
+                  FROM tra_hang th
+                    INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                    INNER JOIN public."order" o ON o.id = th.order_id
+                    INNER JOIN order_detail od ON thd.product_id = od.product_id AND o.id = od.order_id
+                    WHERE DATE_PART('month', o."createdAt") BETWEEN ${from} AND ${to} 
+                    AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                  GROUP BY ngay
+                  ORDER BY ngay DESC
+                  ) a ON a.ngay = dt.ngay
+                      ORDER BY ngay DESC`;
     userQuery = await db.sequelize.query(queryAmountUser, {
       type: QueryTypes.SELECT,
       raw: true,
@@ -371,12 +377,27 @@ Service.exportTransaction = async (params, callback) => {
       raw: true,
     });
   } else if (type === "quarter") {
-    queryAmountUser = `Select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
-                      from public."order" o
-                      WHERE (status = 4 OR status = 7) AND EXTRACT (QUARTER FROM o."createdAt") BETWEEN ${from} AND ${to}
-                      AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
-                      group by ngay
-                      order by ngay DESC`;
+    queryAmountUser = `SELECT COALESCE( dt.doanh_thu, 0 ) doanh_thu, COALESCE( a.total, 0 ) hoan_tien, COALESCE( a.ngay, dt.ngay ) ngay
+                FROM 
+                  (Select SUM(total - discount) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                  from public."order" o
+                  WHERE (status = 4 OR status = 7) AND EXTRACT (QUARTER FROM o."createdAt") BETWEEN ${from} AND ${to}
+                  AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                  group by ngay
+                  order by ngay DESC) dt 
+                FULL JOIN 
+                  (SELECT sum(od.price * thd.qty) total, to_char(th."createdAt", 'DD/MM/YYYY') as ngay
+                  FROM tra_hang th
+                    INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                    INNER JOIN public."order" o ON o.id = th.order_id
+                    INNER JOIN order_detail od ON thd.product_id = od.product_id AND o.id = od.order_id
+                    WHERE EXTRACT (QUARTER FROM o."createdAt") BETWEEN ${from} AND ${to}
+                    AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
+                  GROUP BY ngay
+                  ORDER BY ngay DESC
+                  ) a ON a.ngay = dt.ngay
+                ORDER BY ngay DESC`;
+
     userQuery = await db.sequelize.query(queryAmountUser, {
       type: QueryTypes.SELECT,
       raw: true,
@@ -393,12 +414,26 @@ Service.exportTransaction = async (params, callback) => {
       raw: true,
     });
   } else {
-    queryAmountUser = `Select SUM(total) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
-                      from public."order" o
-                      where (status = 4 OR status = 7) AND DATE_PART('year', o."createdAt") BETWEEN ${from}
+    queryAmountUser = `SELECT COALESCE( dt.doanh_thu, 0 ) doanh_thu, COALESCE( a.total, 0 ) hoan_tien, COALESCE( a.ngay, dt.ngay ) ngay
+                        FROM 
+                          (Select SUM(total - discount) as doanh_thu , to_char("createdAt", 'DD/MM/YYYY') as ngay
+                          from public."order" o
+                          where (status = 4 OR status = 7) AND DATE_PART('year', o."createdAt") BETWEEN ${from}
                           AND ${to}
-                      group by ngay
-                      order by ngay DESC`;
+                          group by ngay
+                          order by ngay DESC) dt 
+                        FULL JOIN 
+                          (SELECT sum(od.price * thd.qty) total, to_char(th."createdAt", 'DD/MM/YYYY') as ngay
+                          FROM tra_hang th
+                            INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
+                            INNER JOIN public."order" o ON o.id = th.order_id
+                            INNER JOIN order_detail od ON thd.product_id = od.product_id AND o.id = od.order_id
+                          where DATE_PART('year', o."createdAt") BETWEEN ${from}
+                            AND ${to}
+                          GROUP BY ngay
+                          ORDER BY ngay DESC 
+                          ) a ON a.ngay = dt.ngay
+                        ORDER BY ngay DESC`;
     userQuery = await db.sequelize.query(queryAmountUser, {
       type: QueryTypes.SELECT,
       raw: true,
@@ -448,30 +483,12 @@ Service.exportTraHang = async (params, callback) => {
   const { start, end, from, to, type, yearFrom, yearTo } = params;
   let queryAmountUser;
   let userQuery;
-
-  // let startAt = moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
-  // let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
-
-  // let queryAmountUser = `SELECT th.id, u.name nguoi_tra,a.name nguoi_duyet,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
-  //                       FROM tra_hang th
-  //                         INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
-  //                         INNER JOIN public."order" o ON o.id = th.order_id
-  //                         INNER JOIN order_detail od ON thd.product_id = od.product_id
-  //                         INNER JOIN users AS u ON o.user_id = u.id
-  //                         LEFT JOIN admins AS a ON th.admin_id = a.id
-  //                       WHERE th."createdAt" BETWEEN '${startAt}'::timestamp
-  //                         AND '${now}'::timestamp
-  //                       GROUP BY th.id, at,u.name, a.name`;
-  // let userQuery = await db.sequelize.query(queryAmountUser, {
-  //   type: QueryTypes.SELECT,
-  //   raw: true,
-  // });
   if (type === "day") {
     let startAt =
       moment(start).utcOffset(420).format("YYYY-MM-DD") + " 00:00:00";
     let now = moment(end).utcOffset(420).format("YYYY-MM-DD") + " 23:59:59";
 
-    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price * thd.qty) total,th."createdAt" at,th."createdAt" as "createdAt"
                         FROM tra_hang th
                           INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                           INNER JOIN public."order" o ON o.id = th.order_id
@@ -480,13 +497,14 @@ Service.exportTraHang = async (params, callback) => {
                           LEFT JOIN admins AS a ON th.admin_id = a.id
                         WHERE th."createdAt" BETWEEN '${startAt}'::timestamp
                           AND '${now}'::timestamp
-                        GROUP BY th.id, at,u.name, a.name`;
+                        GROUP BY th.id, at,u.name, a.name
+                        ORDER BY "createdAt"`;
     userQuery = await db.sequelize.query(queryAmountUser, {
       type: QueryTypes.SELECT,
       raw: true,
     });
   } else if (type === "month") {
-    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price * thd.qty) total,th."createdAt" at,th."createdAt" as "createdAt"
                         FROM tra_hang th
                           INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                           INNER JOIN public."order" o ON o.id = th.order_id
@@ -495,13 +513,14 @@ Service.exportTraHang = async (params, callback) => {
                           LEFT JOIN admins AS a ON th.admin_id = a.id
                         where DATE_PART('month', o."createdAt") BETWEEN ${from} AND ${to} 
                             AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
-                        GROUP BY th.id, at,u.name, a.name`;
+                        GROUP BY th.id, at,u.name, a.name
+                        ORDER BY "createdAt"`;
     userQuery = await db.sequelize.query(queryAmountUser, {
       type: QueryTypes.SELECT,
       raw: true,
     });
   } else if (type === "quarter") {
-    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price * thd.qty) total,th."createdAt" at,th."createdAt" as "createdAt"
                       FROM tra_hang th
                         INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                         INNER JOIN public."order" o ON o.id = th.order_id
@@ -510,13 +529,14 @@ Service.exportTraHang = async (params, callback) => {
                         LEFT JOIN admins AS a ON th.admin_id = a.id
                       WHERE EXTRACT (QUARTER FROM o."createdAt") BETWEEN ${from} AND ${to}
                       AND  DATE_PART('year', o."createdAt") BETWEEN ${yearFrom} AND ${yearTo}
-                      GROUP BY th.id, at,u.name, a.name`;
+                      GROUP BY th.id, at,u.name, a.name
+                      ORDER BY "createdAt"`;
     userQuery = await db.sequelize.query(queryAmountUser, {
       type: QueryTypes.SELECT,
       raw: true,
     });
   } else {
-    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price) total,th."createdAt" at,th."createdAt" as "createdAt"
+    queryAmountUser = `SELECT th.id, u.name nguoi_tra,sum(od.price * thd.qty) total,th."createdAt" at,th."createdAt" as "createdAt"
                         FROM tra_hang th
                           INNER JOIN chi_tiet_tra_hang thd ON th.id = thd.trahang_id
                           INNER JOIN public."order" o ON o.id = th.order_id
@@ -525,7 +545,8 @@ Service.exportTraHang = async (params, callback) => {
                           LEFT JOIN admins AS a ON th.admin_id = a.id
                       where DATE_PART('year', o."createdAt") BETWEEN ${from}
                           AND ${to}
-                          GROUP BY th.id, at,u.name, a.name`;
+                          GROUP BY th.id, at,u.name, a.name
+                          ORDER BY "createdAt"`;
     userQuery = await db.sequelize.query(queryAmountUser, {
       type: QueryTypes.SELECT,
       raw: true,

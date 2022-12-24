@@ -44,6 +44,7 @@ module.exports.messages = {
   7003: "Product create failed",
   7004: "Price product create failed",
   7005: "Price product update failed",
+  7006: "Qty not enough",
 
   8000: "Cate-Product failed",
 
@@ -57,6 +58,7 @@ module.exports.messages = {
   8200: "Create order failed",
   8201: "Order not found",
   8202: "Update order failed",
+  8203: "Find order detail failed",
 
   8300: "Create transaction failed",
 
@@ -72,6 +74,7 @@ module.exports.messages = {
   8651: "DKM create failed",
 
   8700: "Rate not found",
+  8701: "Delete rate failed",
 
   8800: "Payment failed",
   8801: "Price order not true",

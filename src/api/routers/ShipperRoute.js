@@ -6,10 +6,9 @@ const router = express.Router();
 const { multer } = require("../upload/UploadFileCloud");
 
 const cpUpload = multer.fields([{ name: "avatar", maxCount: 1 }]);
-router.post("/signUpAdmin", cpUpload, authenticateAdminToken, (req, res) => {
+router.post("/signUpShipper", cpUpload, authenticateAdminToken, (req, res) => {
   let params = req.body;
-  // params.avatar = req.files["avatar"] ? req.files["avatar"][0] : "";
-  ShipperService.createAdmin(params, (err, result) => {
+  ShipperService.createShipper(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;
     if (err)
@@ -183,7 +182,6 @@ router.post("/changePassword", (req, res) => {
 
 router.post("/forgetPassword", (req, res) => {
   let params = req.body;
-  // console.log(params, "pr=======");
   ShipperService.forgetPassword(params, (err, result) => {
     result = result || {};
     let { errorCode, message, data, statusCode } = result;

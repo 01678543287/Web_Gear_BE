@@ -43,6 +43,8 @@ Service.createPromo = async (params, callback) => {
     return callback(1000, { data: result });
   }
 
+  console.log(params);
+
   let { title, code, status, type, value_type } = params;
 
   let dataPromo = {
@@ -56,6 +58,7 @@ Service.createPromo = async (params, callback) => {
   let errPromo, rsPromo;
   [errPromo, rsPromo] = await Untils.to(Promo.create(dataPromo, { raw: true }));
   if (errPromo) {
+    console.log(errPromo);
     let result = _error(4000, errPromo);
     return callback(4000, { data: result });
   }

@@ -6,7 +6,8 @@ const Utils = require("../modules/Utils");
 var partnerCode = "MOMO";
 var accessKey = "F8BBA842ECF85";
 var secretkey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
-var orderId = partnerCode + new Date().getTime() + Utils.generateId(3);
+// var orderId = partnerCode + new Date().getTime();
+// var orderId = partnerCode + new Date().getTime() + Utils.generateId(8);
 var description = "";
 
 let Service = {};
@@ -14,6 +15,7 @@ let Service = {};
 Service.refundMoMo = async (params, callback = noop) => {
   let { amount, transId, requestId } = params;
   console.log(params, "pamras");
+  const orderId = partnerCode + new Date().getTime();
 
   var rawSignature =
     "accessKey=" +

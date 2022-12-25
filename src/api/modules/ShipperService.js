@@ -13,6 +13,7 @@ const mailer = require("../sendEmail/sendEmail");
 const db = require("../../config/connectDB");
 const Admin = require("../../models/Admin");
 const Shipper = require("../../models/Shipper");
+const Order = require("../../models/Order");
 
 const Untils = require("./Utils");
 const _error = Untils._error;
@@ -1234,8 +1235,21 @@ Service.getListShipper = async (params, callback) => {
     })
   );
   if (errS) {
-    let result = _error(1000);
+    let result = _error(1000, errS);
     return callback(1000, { data: result });
+  }
+
+  for (ship of rsS) {
+    // console.log(ship, "ship nè");
+    let [errO, rsO] = await Untils.to(
+      Order.count({ where: { shipper_id: ship.id, status: 2 } })
+    );
+    if (errO) {
+      let result = _error(1000, errO);
+      return callback(1000, { data: result });
+    }
+    console.log(rsO, "rsO");
+    ship.countOrder = rsO;
   }
 
   let result = _success(200);
